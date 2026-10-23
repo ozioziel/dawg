@@ -1,0 +1,17 @@
+# Alternativa si el VPS YA tiene Nginx (u otro programa) usando los puertos 80/443.
+# Solo levanta el juego, escuchando únicamente en el propio VPS (127.0.0.1:2567).
+# Luego Nginx reenvía el tráfico: ver nginx-dawg.conf y DESPLIEGUE.md (opción B).
+# Uso (dentro de deploy/solo-juego):  docker compose up -d --build
+services:
+  dawg:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: dawg:latest
+    container_name: dawg
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      PORT: "2567"
+    ports:
+      - "127.0.0.1:2567:2567"

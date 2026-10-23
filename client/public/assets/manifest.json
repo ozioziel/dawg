@@ -1,0 +1,388 @@
+{
+  "personajes": {
+    "cambiaformas": {
+      "frame": 128
+    },
+    "cambiaformas_humano": {
+      "frame": 128
+    },
+    "delmar": {
+      "frame": 128
+    },
+    "inteligente": {
+      "frame": 128
+    },
+    "fusilero": {
+      "frame": 128
+    },
+    "escudo": {
+      "frame": 128
+    },
+    "lanzarredes": {
+      "frame": 128
+    },
+    "lanzallamas": {
+      "frame": 128
+    },
+    "francotirador": {
+      "frame": 128
+    },
+    "perro": {
+      "frame": 128
+    },
+    "criogenista": {
+      "frame": 128
+    },
+    "quimico": {
+      "frame": 128
+    },
+    "bioquimico": {
+      "frame": 128
+    },
+    "medico": {
+      "frame": 128
+    },
+    "ingeniero": {
+      "frame": 128
+    },
+    "jefe": {
+      "frame": 192
+    },
+    "pulpo": {
+      "frame": 128
+    }
+  },
+  "objetos": {
+    "incubadora_rota": {
+      "w": 96,
+      "h": 128,
+      "frames": 1
+    },
+    "incubadora": {
+      "w": 96,
+      "h": 128,
+      "frames": 1
+    },
+    "tubo": {
+      "w": 64,
+      "h": 128,
+      "frames": 1
+    },
+    "consola": {
+      "w": 96,
+      "h": 96,
+      "frames": 1
+    },
+    "mesa": {
+      "w": 128,
+      "h": 88,
+      "frames": 1
+    },
+    "servidor": {
+      "w": 64,
+      "h": 112,
+      "frames": 1
+    },
+    "estanteria": {
+      "w": 96,
+      "h": 96,
+      "frames": 1
+    },
+    "holograma": {
+      "w": 160,
+      "h": 160,
+      "frames": 1
+    },
+    "tanque": {
+      "w": 96,
+      "h": 112,
+      "frames": 1
+    },
+    "nucleo": {
+      "w": 224,
+      "h": 224,
+      "frames": 2
+    },
+    "barril": {
+      "w": 56,
+      "h": 64,
+      "frames": 1
+    },
+    "caja": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "botiquin": {
+      "w": 48,
+      "h": 40,
+      "frames": 1
+    },
+    "cobertura": {
+      "w": 96,
+      "h": 80,
+      "frames": 1
+    },
+    "bloque": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "puente": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "charco_agua": {
+      "w": 96,
+      "h": 64,
+      "frames": 1
+    },
+    "estacion": {
+      "w": 96,
+      "h": 96,
+      "frames": 4
+    },
+    "interruptor": {
+      "w": 64,
+      "h": 64,
+      "frames": 6
+    },
+    "palanca": {
+      "w": 64,
+      "h": 80,
+      "frames": 2
+    },
+    "dispensador": {
+      "w": 96,
+      "h": 96,
+      "frames": 1
+    },
+    "boton": {
+      "w": 64,
+      "h": 64,
+      "frames": 2
+    },
+    "puerta_h": {
+      "w": 192,
+      "h": 64,
+      "frames": 2
+    },
+    "puerta_v": {
+      "w": 64,
+      "h": 192,
+      "frames": 2
+    },
+    "torreta": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "torreta_canon": {
+      "w": 56,
+      "h": 28,
+      "frames": 1
+    },
+    "sensor": {
+      "w": 48,
+      "h": 48,
+      "frames": 1
+    },
+    "salida": {
+      "w": 128,
+      "h": 64,
+      "frames": 1
+    },
+    "pistola": {
+      "w": 48,
+      "h": 22,
+      "frames": 1
+    },
+    "lanza": {
+      "w": 132,
+      "h": 32,
+      "frames": 1
+    },
+    "rifle": {
+      "w": 64,
+      "h": 22,
+      "frames": 1
+    },
+    "arma_red": {
+      "w": 64,
+      "h": 26,
+      "frames": 1
+    },
+    "arma_llamas": {
+      "w": 72,
+      "h": 28,
+      "frames": 1
+    },
+    "rifle_franco": {
+      "w": 104,
+      "h": 20,
+      "frames": 1
+    },
+    "escudo_frontal": {
+      "w": 32,
+      "h": 88,
+      "frames": 1
+    },
+    "bala": {
+      "w": 24,
+      "h": 10,
+      "frames": 1
+    },
+    "bala_roja": {
+      "w": 24,
+      "h": 10,
+      "frames": 1
+    },
+    "energia": {
+      "w": 36,
+      "h": 18,
+      "frames": 1
+    },
+    "psiquico": {
+      "w": 28,
+      "h": 28,
+      "frames": 1
+    },
+    "red_proy": {
+      "w": 44,
+      "h": 44,
+      "frames": 1
+    },
+    "frasco_azul": {
+      "w": 22,
+      "h": 30,
+      "frames": 1
+    },
+    "frasco_verde": {
+      "w": 22,
+      "h": 30,
+      "frames": 1
+    },
+    "frasco_morado": {
+      "w": 22,
+      "h": 30,
+      "frames": 1
+    },
+    "llama": {
+      "w": 48,
+      "h": 48,
+      "frames": 1
+    },
+    "rayo_franco": {
+      "w": 48,
+      "h": 8,
+      "frames": 1
+    },
+    "roca_tq": {
+      "w": 40,
+      "h": 40,
+      "frames": 1
+    },
+    "acido": {
+      "w": 140,
+      "h": 100,
+      "frames": 1
+    },
+    "gas": {
+      "w": 180,
+      "h": 180,
+      "frames": 1
+    },
+    "fuego": {
+      "w": 72,
+      "h": 72,
+      "frames": 1
+    },
+    "hielo": {
+      "w": 100,
+      "h": 124,
+      "frames": 1
+    },
+    "red_trampa": {
+      "w": 104,
+      "h": 112,
+      "frames": 1
+    },
+    "alma": {
+      "w": 64,
+      "h": 72,
+      "frames": 1
+    },
+    "sombra": {
+      "w": 64,
+      "h": 24,
+      "frames": 1
+    },
+    "marca_suelo": {
+      "w": 96,
+      "h": 48,
+      "frames": 1
+    },
+    "aura_tq": {
+      "w": 96,
+      "h": 96,
+      "frames": 1
+    },
+    "particula": {
+      "w": 16,
+      "h": 16,
+      "frames": 1
+    },
+    "chispa": {
+      "w": 24,
+      "h": 24,
+      "frames": 1
+    },
+    "flecha": {
+      "w": 40,
+      "h": 40,
+      "frames": 1
+    },
+    "icono_hielo": {
+      "w": 40,
+      "h": 40,
+      "frames": 1
+    },
+    "icono_red": {
+      "w": 40,
+      "h": 40,
+      "frames": 1
+    },
+    "icono_calavera": {
+      "w": 40,
+      "h": 40,
+      "frames": 1
+    },
+    "icono_alma": {
+      "w": 40,
+      "h": 40,
+      "frames": 1
+    },
+    "ping_ayuda": {
+      "w": 48,
+      "h": 48,
+      "frames": 1
+    },
+    "ping_aqui": {
+      "w": 48,
+      "h": 48,
+      "frames": 1
+    },
+    "ping_defiendan": {
+      "w": 48,
+      "h": 48,
+      "frames": 1
+    },
+    "ping_voy": {
+      "w": 48,
+      "h": 48,
+      "frames": 1
+    }
+  },
+  "tiles": "tiles.png"
+}

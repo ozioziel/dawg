@@ -1,0 +1,29 @@
+{
+  "name": "dawg",
+  "version": "0.1.0",
+  "private": true,
+  "description": "dawg — tres aliens escapan del Área 51. Juego web cooperativo top-down (demo Área 1).",
+  "type": "module",
+  "workspaces": [
+    "shared",
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n servidor,cliente -c magenta,cyan \"npm run dev -w server\" \"npm run dev -w client\"",
+    "build": "npm run build -w server && npm run build -w client",
+    "build:itch": "npm run build:itch -w client",
+    "start": "npm start -w server",
+    "mapa": "node maps/generar-area1.mjs",
+    "arte": "node .privado/recursos/arte-fuente/generar-arte.mjs",
+    "typecheck": "tsc -p shared --noEmit && tsc -p server --noEmit && tsc -p client --noEmit",
+    "prueba:bots": "node server/scripts/prueba-bots.mjs",
+    "paquete:vps": "node deploy/crear-paquete.mjs"
+  },
+  "devDependencies": {
+    "@resvg/resvg-js": "2.6.2",
+    "concurrently": "9.1.2",
+    "fflate": "0.8.2",
+    "typescript": "5.9.3"
+  }
+}
