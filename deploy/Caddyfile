@@ -1,0 +1,6 @@
+# Caddy consigue y renueva solo el certificado HTTPS para tu dirección sslip.io
+# y reenvía todo (página + WebSocket del juego) al contenedor dawg.
+{$DOMINIO} {
+	encode gzip
+	reverse_proxy dawg:2567
+}
