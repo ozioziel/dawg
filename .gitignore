@@ -1,0 +1,23 @@
+# Carpeta privada (solo nosotros)
+.privado/
+
+# Dependencias y builds
+node_modules/
+dist/
+*.zip
+*.tsbuildinfo
+
+# Entorno
+.env
+.env.*
+!.env.example
+
+# Sistema / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+
+# Configuración local de Claude Code
+.claude/
