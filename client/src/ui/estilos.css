@@ -1,0 +1,445 @@
+:root {
+  --fondo: #0b1720;
+  --panel: #14263a;
+  --panel-2: #1c3350;
+  --borde: #0a0a0c;
+  --texto: #eaf6ff;
+  --tenue: #8fb0c8;
+  --cian: #3ef0ff;
+  --rosa: #ff5ad1;
+  --verde: #7dff6a;
+  --amarillo: #ffd23e;
+  --rojo: #ff4a4a;
+  --verde-alien: #7fb24a;
+  --naranja: #f08a24;
+  --lila: #a58cf0;
+  --sombra: 0 6px 0 #05080b;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: "Chakra Petch", system-ui, sans-serif;
+  overflow: hidden;
+  user-select: none;
+}
+
+#juego {
+  position: fixed;
+  inset: 0;
+}
+
+#juego canvas {
+  display: block;
+}
+
+#ui {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+#ui > * {
+  pointer-events: auto;
+}
+
+.titulo {
+  font-family: "Bangers", "Impact", sans-serif;
+  letter-spacing: 0.06em;
+  font-weight: 400;
+  margin: 0;
+  -webkit-text-stroke: 2px var(--borde);
+  paint-order: stroke fill;
+  text-shadow: 0 5px 0 var(--borde);
+}
+
+/* ---------------- Pantallas a pantalla completa ---------------- */
+.pantalla {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  /* La imagen de portada se pone desde JS (ruta relativa válida también en itch.io). */
+  background: var(--fondo);
+  overflow-y: auto;
+}
+
+.caja {
+  width: min(560px, 100%);
+  background: var(--panel);
+  border: 4px solid var(--borde);
+  border-radius: 18px;
+  box-shadow: var(--sombra), 0 0 40px rgba(62, 240, 255, 0.15);
+  padding: 24px;
+}
+
+.logo {
+  font-size: clamp(64px, 14vw, 120px);
+  color: var(--verde);
+  text-align: center;
+  line-height: 0.9;
+}
+
+.subtitulo {
+  text-align: center;
+  font-size: clamp(18px, 3.4vw, 26px);
+  color: var(--texto);
+  margin: 6px 0 22px;
+}
+
+label {
+  display: block;
+  font-size: 14px;
+  color: var(--tenue);
+  margin: 12px 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+input[type="text"] {
+  width: 100%;
+  font: inherit;
+  font-size: 20px;
+  color: var(--texto);
+  background: #0b1520;
+  border: 3px solid var(--borde);
+  border-radius: 12px;
+  padding: 10px 14px;
+  outline: none;
+}
+
+input[type="text"]:focus {
+  border-color: var(--cian);
+}
+
+.fila {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.fila > * {
+  flex: 1;
+}
+
+button {
+  font-family: "Bangers", "Impact", sans-serif;
+  font-size: 24px;
+  letter-spacing: 0.06em;
+  color: var(--borde);
+  background: var(--verde);
+  border: 3px solid var(--borde);
+  border-radius: 12px;
+  padding: 10px 18px;
+  cursor: pointer;
+  box-shadow: 0 5px 0 var(--borde);
+  transition: transform 0.06s, box-shadow 0.06s, filter 0.1s;
+}
+
+button:hover {
+  filter: brightness(1.1);
+}
+
+button:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 var(--borde);
+}
+
+button:disabled {
+  filter: grayscale(0.8) brightness(0.7);
+  cursor: not-allowed;
+}
+
+button.sec {
+  background: var(--cian);
+}
+
+button.rosa {
+  background: var(--rosa);
+}
+
+button.gris {
+  background: #9fb3c4;
+}
+
+.error {
+  color: var(--rojo);
+  min-height: 1.4em;
+  margin-top: 10px;
+  font-weight: 700;
+}
+
+.ayuda {
+  color: var(--tenue);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.enlace {
+  background: none;
+  border: none;
+  box-shadow: none;
+  color: var(--cian);
+  font-family: inherit;
+  font-size: 15px;
+  padding: 4px;
+  text-decoration: underline;
+}
+
+/* ---------------- Lobby ---------------- */
+.lobby {
+  width: min(980px, 100%);
+}
+
+.codigo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.codigo .titulo {
+  font-size: clamp(48px, 10vw, 84px);
+  color: var(--amarillo);
+  letter-spacing: 0.18em;
+}
+
+.aliens {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 760px) {
+  .aliens {
+    grid-template-columns: 1fr;
+  }
+  .alien {
+    display: grid;
+    grid-template-columns: 84px 1fr;
+    grid-template-rows: auto auto auto;
+    column-gap: 12px;
+    text-align: left;
+    padding: 8px 12px;
+  }
+  .alien img {
+    width: 84px;
+    height: 84px;
+    grid-row: 1 / span 3;
+  }
+  .alien p {
+    min-height: 0;
+  }
+  .alien .quien {
+    margin-top: 2px;
+  }
+}
+
+.alien {
+  position: relative;
+  background: var(--panel-2);
+  border: 4px solid var(--borde);
+  border-radius: 16px;
+  padding: 12px;
+  cursor: pointer;
+  text-align: center;
+  box-shadow: var(--sombra);
+  transition: transform 0.1s;
+}
+
+.alien:hover {
+  transform: translateY(-3px);
+}
+
+.alien.mio {
+  outline: 4px solid var(--verde);
+}
+
+.alien.tomado {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.alien img {
+  width: 140px;
+  height: 140px;
+  image-rendering: auto;
+  filter: drop-shadow(0 6px 0 rgba(0, 0, 0, 0.35));
+}
+
+.alien h3 {
+  font-family: "Bangers", "Impact", sans-serif;
+  font-weight: 400;
+  font-size: 30px;
+  margin: 4px 0;
+  letter-spacing: 0.05em;
+}
+
+.alien p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--tenue);
+  min-height: 3em;
+}
+
+.alien .quien {
+  margin-top: 8px;
+  font-weight: 700;
+  min-height: 1.4em;
+}
+
+.jugadores {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 18px 0;
+}
+
+.chip {
+  background: #0b1520;
+  border: 3px solid var(--borde);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-weight: 700;
+}
+
+.chip.listo {
+  background: var(--verde);
+  color: var(--borde);
+}
+
+.cuenta {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 200px;
+  color: var(--amarillo);
+  background: rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+
+/* ---------------- Chat ---------------- */
+.chat {
+  position: fixed;
+  left: 16px;
+  bottom: 150px;
+  width: min(420px, calc(100vw - 32px));
+  pointer-events: none;
+  font-size: 15px;
+}
+
+.chat .linea {
+  background: rgba(8, 16, 26, 0.72);
+  border-radius: 8px;
+  padding: 4px 10px;
+  margin-top: 4px;
+  width: fit-content;
+  max-width: 100%;
+  transition: opacity 0.6s;
+  overflow-wrap: anywhere;
+}
+
+.chat .linea b {
+  margin-right: 6px;
+}
+
+.chat input {
+  pointer-events: auto;
+  margin-top: 6px;
+  font-size: 16px;
+  padding: 8px 12px;
+}
+
+/* ---------------- Fin de partida ---------------- */
+.fin {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(5, 10, 18, 0.72);
+  padding: 16px;
+}
+
+.fin .caja {
+  text-align: center;
+}
+
+.fin .titulo {
+  font-size: clamp(56px, 12vw, 96px);
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 18px;
+}
+
+.tabla td {
+  padding: 6px;
+  border-bottom: 2px solid #0b1520;
+}
+
+/* ---------------- Ayuda de controles ---------------- */
+.controles {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 14px;
+  align-items: center;
+  font-size: 15px;
+  margin: 8px 0 4px;
+}
+
+kbd {
+  font-family: "Chakra Petch", monospace;
+  font-weight: 700;
+  background: #eaf6ff;
+  color: var(--borde);
+  border: 2px solid var(--borde);
+  border-bottom-width: 4px;
+  border-radius: 7px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 16px;
+  z-index: 5;
+}
+
+.modal .caja {
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+
+.conexion {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--rojo);
+  color: #fff;
+  border: 3px solid var(--borde);
+  border-radius: 10px;
+  padding: 6px 14px;
+  font-weight: 700;
+}
