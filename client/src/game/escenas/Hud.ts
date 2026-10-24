@@ -500,15 +500,16 @@ export class Hud extends Phaser.Scene {
     if (me && me.vivo) {
       const pz = me.ocupado ? this.st.puzzles.get(me.ocupado) : undefined;
       const def = me.ocupado ? PUZZLES[me.ocupado] : undefined;
-      if (def && pz?.estado === "activo" && ["orbe", "identidad", "tuberias"].includes(def.minijuego)) {
-        want = { orbe: "MgOrbe", identidad: "MgIdentidad", tuberias: "MgTuberias" }[def.minijuego as "orbe"];
+      const escenas: Partial<Record<string, string>> = { memoria: "MgMemoria", cara: "MgCara", transmutacion: "MgTransmutacion" };
+      if (def && pz?.estado === "activo" && escenas[def.minijuego]) {
+        want = escenas[def.minijuego]!;
         id = me.ocupado;
       } else {
         const p6 = this.st.puzzles.get("p6");
         const p4 = this.st.puzzles.get("p4");
         const consola = this.c.world.findOne("station", "p4");
         if (p6?.estado === "activo" && p6.actores.split(",").includes(this.c.room.sessionId)) {
-          want = "MgEsclusa";
+          want = "MgValvulas";
           id = "p6";
         } else if (p4?.estado === "activo" && consola && me.disfrazado && (me.kind === "cambiaformas" || me.almas.includes("cambiaformas")) && dist(me.x, me.y, consola.x, consola.y) < INTERACT_RANGE * 2) {
           want = "MgRayos";

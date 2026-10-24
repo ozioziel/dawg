@@ -74,6 +74,7 @@ async function main() {
   const timer = setInterval(() => {
     partidas.forEach((room, i) => {
       const st = room.state;
+      if (!st?.jugadores) return; // el estado aún no llegó
       const yo = st.jugadores.get(room.sessionId);
       if (!yo || !yo.vivo) return;
       let best = null;
@@ -108,6 +109,7 @@ async function main() {
   for (let s = 0; s < SEGUNDOS; s += 5) {
     await sleep(5000);
     const st = partidas[0].state;
+    if (!st?.jugadores) continue;
     const js = [];
     st.jugadores.forEach((p) => js.push(`${p.nombre}(${p.kind}) hp=${Math.round(p.hp)} ${p.vivo ? "" : "MUERTO"} ${p.estado} @${Math.round(p.x)},${Math.round(p.y)}`));
     const abiertas = [];

@@ -1,5 +1,7 @@
-// Base de los minijuegos: panel centrado, título, tiempo restante y aviso de fallo.
-import { PUZZLES, type PuzzleDef } from "@dawg/shared";
+// Base de los minijuegos: panel centrado, título, tiempo restante y contador de errores.
+// Reglas comunes: se permiten ERRORES_PERMITIDOS errores; con uno más, falla.
+// Recibir un golpe cuenta como un error (como mucho uno cada 1,5 s).
+import { ERRORES_PERMITIDOS, PUZZLES, type PuzzleDef } from "@dawg/shared";
 import Phaser from "phaser";
 import type { PuzzleS } from "../../net/tipos";
 import { TEXTO, TITULO, ctx, type Ctx } from "../contexto";
@@ -14,19 +16,30 @@ export abstract class Minijuego extends Phaser.Scene {
   protected ph = 440;
   /** Si captura ratón y teclado (los paneles informativos no). */
   protected bloquea = true;
+  /** Si los golpes recibidos cuentan como error. */
+  protected cuentaGolpes = true;
+  /** Si se dibuja el contador de errores del propio minijuego. */
+  protected muestraErrores = true;
   protected cont!: Phaser.GameObjects.Container;
   protected fondo!: Phaser.GameObjects.Graphics;
   protected g!: Phaser.GameObjects.Graphics;
   protected titulo!: Phaser.GameObjects.Text;
   protected info!: Phaser.GameObjects.Text;
   protected terminado = false;
+  protected errores = 0;
+  private gErr!: Phaser.GameObjects.Graphics;
+  private avisoErr!: Phaser.GameObjects.Text;
+  private avisoHasta = 0;
   private hpPrev = -1;
+  private ultimoGolpe = -99;
 
   init(data: { id: string }): void {
     this.id = data.id;
     this.def = PUZZLES[data.id];
     this.terminado = false;
+    this.errores = 0;
     this.hpPrev = -1;
+    this.ultimoGolpe = -99;
   }
 
   create(): void {
@@ -35,11 +48,14 @@ export abstract class Minijuego extends Phaser.Scene {
     this.cont = this.add.container(0, 0);
     this.fondo = this.add.graphics();
     this.g = this.add.graphics();
+    this.gErr = this.add.graphics();
     this.titulo = this.add.text(20, 12, this.def.nombre, { ...TITULO, fontSize: "30px", color: "#3ef0ff" });
-    this.info = this.add.text(this.pw - 20, 18, "", { ...TEXTO, fontSize: "16px", align: "right" }).setOrigin(1, 0);
-    this.cont.add([this.fondo, this.g, this.titulo, this.info]);
+    this.info = this.add.text(this.pw - 20, 14, "", { ...TEXTO, fontSize: "16px", align: "right" }).setOrigin(1, 0);
+    this.avisoErr = this.add.text(this.pw / 2, 58, "", { ...TEXTO, fontSize: "18px", color: "#ff6a6a" }).setOrigin(0.5);
+    this.cont.add([this.fondo, this.g, this.gErr, this.titulo, this.info, this.avisoErr]);
     this.dibujarFondo();
     this.crear();
+    this.cont.bringToTop(this.avisoErr);
     this.colocar();
     this.scale.on("resize", this.colocar, this);
     this.events.once("shutdown", () => {
@@ -83,12 +99,13 @@ export abstract class Minijuego extends Phaser.Scene {
     return Math.max(0, Math.min(1, 1 - pz.tiempo / pz.total));
   }
 
+  /** Versión corta (estaciones del núcleo). */
   protected get corto(): boolean {
     return this.def.tipo === "nucleo";
   }
 
-  /** Vida perdida desde el último cuadro (para castigar golpes recibidos). */
-  protected golpeRecibido(): number {
+  /** Vida perdida desde el último cuadro. */
+  private golpeRecibido(): number {
     const me = this.c.room.state.jugadores.get(this.c.room.sessionId);
     if (!me) return 0;
     const d = this.hpPrev >= 0 ? Math.max(0, this.hpPrev - me.hp) : 0;
@@ -96,11 +113,30 @@ export abstract class Minijuego extends Phaser.Scene {
     return d;
   }
 
+  /** Suma un error; con más de ERRORES_PERMITIDOS, el minijuego falla. */
+  protected error(motivo: string): void {
+    if (this.terminado) return;
+    this.errores++;
+    sfx.nota(false);
+    this.cameras.main.shake(110, 0.004);
+    if (this.errores > ERRORES_PERMITIDOS) {
+      this.fallar(motivo);
+      return;
+    }
+    this.avisoErr.setText(`✖ ${motivo}`);
+    this.avisoHasta = this.time.now + 1600;
+  }
+
+  protected acierto(): void {
+    sfx.nota(true);
+  }
+
   protected fallar(razon: string): void {
     if (this.terminado) return;
     this.terminado = true;
     this.c.room.send("mg", { id: this.id, ev: "fallo", razon });
     sfx.nota(false);
+    this.avisoErr.setText("");
     const t = this.add.text(this.pw / 2, this.ph / 2, "¡FALLO!", { ...TITULO, fontSize: "72px", color: "#ff4a4a" }).setOrigin(0.5);
     this.cont.add(t);
   }
@@ -109,7 +145,26 @@ export abstract class Minijuego extends Phaser.Scene {
     const pz = this.pz;
     if (!pz) return;
     if (pz.estado === "activo") this.info.setText(`${Math.ceil(pz.tiempo)} s`);
+    if (this.cuentaGolpes && this.golpeRecibido() > 0 && this.time.now - this.ultimoGolpe > 1500) {
+      this.ultimoGolpe = this.time.now;
+      this.error("¡Te golpearon! Que te defiendan.");
+    }
+    if (this.avisoHasta && this.time.now > this.avisoHasta) {
+      this.avisoErr.setText("");
+      this.avisoHasta = 0;
+    }
+    if (this.muestraErrores) this.dibujarErrores();
     this.tick(Math.min(delta, 50) / 1000, pz);
+  }
+
+  /** Corazones: los que quedan antes de fallar. */
+  private dibujarErrores(): void {
+    const g = this.gErr.clear();
+    const x0 = this.pw - 22 - ERRORES_PERMITIDOS * 22;
+    for (let i = 0; i < ERRORES_PERMITIDOS; i++) {
+      const vivo = i >= this.errores;
+      g.fillStyle(vivo ? 0x7dff6a : 0x3a2a2a, 1).fillCircle(x0 + i * 22 + 10, 46, 7).lineStyle(2, 0x0a0a0c).strokeCircle(x0 + i * 22 + 10, 46, 7);
+    }
   }
 
   protected abstract crear(): void;
