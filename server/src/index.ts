@@ -36,7 +36,17 @@ app.get("/salud", (_req, res) => {
 // Página propia: si existe el cliente compilado, se sirve en la misma dirección.
 const clienteDir = CLIENTE_DIR ? resolve(CLIENTE_DIR) : "";
 if (clienteDir && existsSync(clienteDir)) {
-  app.use(express.static(clienteDir, { maxAge: "1h" }));
+  app.use(
+    express.static(clienteDir, {
+      setHeaders: (res, ruta) => {
+        // Los .js/.css de Vite llevan una huella en el nombre (index-AbC123.js): cambian con cada build,
+        // así que se pueden guardar mucho tiempo. Lo demás (index.html, imágenes) se revalida siempre,
+        // para que tras una actualización nadie se quede con la versión vieja.
+        if (/-[\w-]{8}\.(js|css)$/.test(ruta)) res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        else res.setHeader("Cache-Control", "no-cache");
+      },
+    }),
+  );
   console.log(`Sirviendo el juego desde ${clienteDir}`);
 }
 
