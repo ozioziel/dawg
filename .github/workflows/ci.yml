@@ -42,7 +42,7 @@ jobs:
           JUGADORES_MINIMOS: "3"
         run: |
           npm start > servidor.log 2>&1 &
-          curl -fsS --retry 30 --retry-delay 1 --retry-connrefused http://127.0.0.1:2567/salud
+          curl -fsS --retry 30 --retry-delay 1 --retry-all-errors http://127.0.0.1:2567/salud
           echo
           npm run prueba:bots -- ws://127.0.0.1:2567 20
 
@@ -63,7 +63,7 @@ jobs:
       - name: Arrancar la imagen y comprobar /salud
         run: |
           docker run -d --name dawg -p 2567:2567 dawg:ci
-          curl -fsS --retry 30 --retry-delay 1 --retry-connrefused http://127.0.0.1:2567/salud
+          curl -fsS --retry 30 --retry-delay 1 --retry-all-errors http://127.0.0.1:2567/salud
 
       - name: Log del contenedor
         if: failure()
