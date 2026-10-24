@@ -11,11 +11,11 @@ import type { Ctx } from "./contexto";
 import { Carga } from "./escenas/Carga";
 import { Hud } from "./escenas/Hud";
 import { Mundo } from "./escenas/Mundo";
-import { MgEsclusa } from "./minijuegos/MgEsclusa";
-import { MgIdentidad } from "./minijuegos/MgIdentidad";
-import { MgOrbe } from "./minijuegos/MgOrbe";
+import { MgCara } from "./minijuegos/MgCara";
+import { MgMemoria } from "./minijuegos/MgMemoria";
 import { MgRayos } from "./minijuegos/MgRayos";
-import { MgTuberias } from "./minijuegos/MgTuberias";
+import { MgTransmutacion } from "./minijuegos/MgTransmutacion";
+import { MgValvulas } from "./minijuegos/MgValvulas";
 
 let juego: Phaser.Game | null = null;
 
@@ -50,9 +50,10 @@ export function iniciarJuego(room: SalaJuego, volverAlMenu: (msg?: string) => vo
     backgroundColor: "#0b2328",
     scale: { mode: Phaser.Scale.RESIZE, width: window.innerWidth, height: window.innerHeight },
     render: { antialias: true, pixelArt: false, roundPixels: false },
-    fps: { target: 60 },
+    // Solo en desarrollo: ?bucle=temporizador mantiene el juego en marcha aunque la pestaña no se dibuje (pruebas automáticas).
+    fps: { target: 60, forceSetTimeOut: import.meta.env.DEV && location.search.includes("bucle=temporizador") },
     disableContextMenu: true,
-    scene: [Carga, Mundo, Hud, MgOrbe, MgIdentidad, MgTuberias, MgRayos, MgEsclusa],
+    scene: [Carga, Mundo, Hud, MgMemoria, MgCara, MgTransmutacion, MgRayos, MgValvulas],
     callbacks: { preBoot: (g) => g.registry.set("ctx", c) },
   });
   if (import.meta.env.DEV) (window as unknown as { juego: Phaser.Game }).juego = juego;

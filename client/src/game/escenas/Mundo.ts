@@ -665,13 +665,13 @@ export class Mundo extends Phaser.Scene {
       if (pz.estado === "activo")
         return id === "p4" ? (pz.solo ? "Memoriza el código y actívalo con telequinesis en los interruptores (Q para cambiar)." : "Código en pantalla: díctalo a tu compañero (Enter para chatear).") : `${def.nombre}: en curso…`;
       if (!puede) return `${def.nombre}: solo ${ALIENS[rol].nombre}`;
-      if ((def.minijuego === "identidad" || id === "p4") && !me.disfrazado) return `${def.nombre}: primero disfrázate (ESPACIO)`;
+      if ((def.minijuego === "cara" || id === "p4") && !me.disfrazado) return `${def.nombre}: primero disfrázate (ESPACIO)`;
       return `[E] ${def.nombre}`;
     }
     for (const l of this.vPalanca) {
       if (dist(x, y, l.obj.x, l.obj.y) <= INTERACT_RANGE + 10) {
         const p6 = this.st.puzzles.get("p6");
-        if (p6?.estado === "activo") return "Esclusa en marcha: sigue el ritmo";
+        if (p6?.estado === "activo") return "Válvulas en marcha: sigue las órdenes de la pantalla";
         return `[E] Palanca ${l.obj.props.parte} (${l.obj.props.parte === "A" ? "Cambiaformas" : "Del mar"})`;
       }
     }
