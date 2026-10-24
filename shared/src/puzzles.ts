@@ -80,7 +80,7 @@ export const PUZZLES: Record<string, PuzzleDef> = {
     roles: ["cambiaformas", "delmar"],
     minijuego: "valvulas",
     duracion: MINIGAME_DURATION,
-    descripcion: "Sigan las órdenes de la pantalla: «solo A», «solo B» o «¡AMBOS!». El del mar limpia el agua entre rondas.",
+    descripcion: "Sigan las órdenes de la pantalla: «solo A», «solo B» o «¡AMBOS!». Cumplirlas rápido acorta el tiempo.",
   },
   n1: {
     id: "n1",
@@ -140,20 +140,15 @@ export const PUENTE = {
   slots: 6,
 };
 
-/** Válvulas a la vez: órdenes una a una, con tiempo de sobra para pulsar. */
+/** Válvulas a la vez: órdenes una tras otra durante 30-60 s. */
 export const ESCLUSA = {
-  rounds: 3,
-  roundTime: 20,
-  pause: 10,
   /** Al llegar a este número de fallos, se falla (se permiten ERRORES_PERMITIDOS). */
   maxMisses: ERRORES_PERMITIDOS + 1,
-  maxWater: 9,
-  /** Por ronda: cada cuántos segundos llega una orden y cuánto dura para pulsar. */
-  ordenes: [
-    { cada: 3.4, dura: 2.4 },
-    { cada: 2.9, dura: 2.0 },
-    { cada: 2.5, dura: 1.7 },
-  ],
+  /** Cada cuántos segundos llega una orden y cuántos dura para pulsar. */
+  cada: 3.2,
+  dura: 2.3,
+  /** Una orden cuenta como rápida si se cumple en esta fracción de su tiempo. */
+  rapida: 0.55,
 };
 
 export function puzzleFor(id: string): PuzzleDef | undefined {

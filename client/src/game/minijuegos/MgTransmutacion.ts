@@ -18,6 +18,8 @@ const BOTON_Y = 330;
 
 interface Item {
   x: number;
+  /** Momento en que entró al transmutador (ms), o 0. */
+  entrada: number;
   pide: number;
   estado: "pendiente" | "hecho" | "fallado";
   img: Phaser.GameObjects.Image;
@@ -51,7 +53,7 @@ export class MgTransmutacion extends Minijuego {
     t((ZONA.x0 + ZONA.x1) / 2, CINTA_Y - 92, "TRANSMUTADOR", 15, "#3ef0ff");
     RESULTADOS.forEach((r, i) => t(130 + i * 220, BOTON_Y + 38, `${i + 1} · ${r.nombre}`, 20));
     this.estado = t(this.pw / 2, 96, "", 17, "#ffd23e");
-    t(this.pw / 2, this.ph - 22, "Cuando un objeto esté dentro del TRANSMUTADOR, pulsa lo que pide su cartel (clic o teclas 1, 2, 3).", 13, "#a9c6db");
+    t(this.pw / 2, this.ph - 22, "Cuando un objeto entre al TRANSMUTADOR, pulsa lo que pide su cartel (clic o 1, 2, 3). Si eres rápido, termina antes.", 13, "#a9c6db");
     this.input.on("pointerdown", () => {
       const p = this.puntero();
       if (p.y < BOTON_Y || p.y > BOTON_Y + 76) return;
@@ -72,7 +74,7 @@ export class MgTransmutacion extends Minijuego {
       .text(ENTRADA, CINTA_Y - 58, `→ ${RESULTADOS[pide].nombre}`, { ...TEXTO, fontSize: "15px", color: "#" + RESULTADOS[pide].color.toString(16), backgroundColor: "#0a1622", padding: { x: 6, y: 2 } })
       .setOrigin(0.5);
     this.cont.add([img, cartel]);
-    this.items.push({ x: ENTRADA, pide, estado: "pendiente", img, cartel });
+    this.items.push({ x: ENTRADA, entrada: 0, pide, estado: "pendiente", img, cartel });
   }
 
   /** El objeto pendiente que está ahora dentro del transmutador. */
@@ -92,7 +94,9 @@ export class MgTransmutacion extends Minijuego {
     }
     it.estado = "hecho";
     this.hechos++;
-    this.acierto();
+    // Rápido: en menos de 0,9 s desde que entró al transmutador.
+    if (it.entrada && this.time.now - it.entrada <= 900) this.aciertoRapido();
+    else this.acierto();
     if (i === 0) it.img.setTexture("cobertura").setDisplaySize(70, 58);
     else if (i === 1) it.img.setTexture("pulpo", 0).setDisplaySize(66, 66);
     else it.img.setVisible(false);
@@ -111,6 +115,7 @@ export class MgTransmutacion extends Minijuego {
       }
       for (const it of this.items) {
         it.x += v * dt;
+        if (!it.entrada && it.x >= ZONA.x0) it.entrada = this.time.now;
         if (it.estado === "pendiente" && it.x > ZONA.x1) {
           it.estado = "fallado";
           it.img.setTint(0x666666);

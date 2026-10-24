@@ -1,10 +1,13 @@
-// Lógica de las salas-puzzle: individuales (1,5 min), dúos y estaciones del núcleo.
+// Lógica de las salas-puzzle: individuales, dúos y estaciones del núcleo.
+// Duran entre 30 y 60 s: cada orden cumplida bien y rápido resta 5 s (nunca menos de 30 s en total).
 // Si fallan: llegan más soldados y la consola se bloquea 30 s.
 import {
   ALIENS,
   ESCLUSA,
   INTERACT_RANGE,
+  MINIGAME_BONUS,
   MINIGAME_LOCK,
+  MINIGAME_MIN,
   PUENTE,
   PUZZLES,
   RAYOS_SIMBOLOS,
@@ -27,17 +30,15 @@ interface Nota {
 }
 
 interface EsclusaData {
-  ronda: number;
-  fase: "ritmo" | "pausa" | "espera";
+  fase: "ritmo" | "espera";
   inicio: number;
-  pausaT: number;
+  esperaT: number;
   notas: Nota[];
-  hitsA: boolean[];
-  hitsB: boolean[];
+  /** Momento (relativo a inicio) en que cada válvula cumplió la orden, o -1. */
+  hitsA: number[];
+  hitsB: number[];
   evaluada: boolean[];
   fallos: number;
-  agua: number;
-  aguaT: number;
   opA: string;
   opB: string;
   ultimoError: number;
@@ -49,14 +50,16 @@ export class Puzzles {
   private esclusa: EsclusaData | null = null;
   /** Palancas reservadas antes de empezar la esclusa. */
   private palancas = { A: "", B: "" };
-  private hitAt = new Map<string, number>();
+  /** Cuándo empezó cada puzzle (para el mínimo de 30 s). */
+  private inicio = new Map<string, number>();
+  private ultimoBonus = new Map<string, number>();
 
   constructor(private g: Partida) {}
 
   init(): void {
     this.obj.clear();
     for (const o of this.g.world.objects) {
-      if (["station", "switch", "dispenser", "slot", "button", "lever", "water_zone"].includes(o.type)) {
+      if (["station", "switch", "dispenser", "slot", "button", "lever"].includes(o.type)) {
         const k = `${o.type}:${o.name}`;
         if (!this.obj.has(k)) this.obj.set(k, []);
         this.obj.get(k)!.push(o);
@@ -123,8 +126,8 @@ export class Puzzles {
     pz.solo = false;
     pz.datos = JSON.stringify({ semilla: Math.floor(Math.random() * 1e9), inicio: this.g.time });
     p.ocupado = pid;
-    this.hitAt.set(pid, this.g.time);
-    this.g.aviso(`${p.nombre} empezó "${def.nombre}". ¡Defiéndanlo ${Math.round(def.duracion)} segundos!`, "info");
+    this.inicio.set(pid, this.g.time);
+    this.g.aviso(`${p.nombre} empezó "${def.nombre}". ¡Defiéndanlo! Dura de ${MINIGAME_MIN} a ${def.duracion} s: cuanto mejor lo haga, antes termina.`, "info");
     this.g.director.onPuzzleStart(pid);
   }
 
@@ -136,6 +139,19 @@ export class Puzzles {
     if (msg.id === "p6") return this.esclusaNota(id, msg);
     if (!this.actores(pz).includes(id)) return;
     if (msg.ev === "fallo") this.fail(msg.id, msg.razon ? String(msg.razon).slice(0, 80) : "Falló el minijuego.");
+    else if (msg.ev === "acierto" && msg.rapido) this.bonus(msg.id);
+  }
+
+  /** Resta MINIGAME_BONUS segundos, sin que el puzzle dure menos de MINIGAME_MIN en total. */
+  private bonus(pid: string): void {
+    const pz = this.pz(pid);
+    const ahora = this.g.time;
+    // Como mucho un descuento cada 1,5 s (evita trampas por mensajes repetidos).
+    if (ahora - (this.ultimoBonus.get(pid) ?? -99) < 1.5) return;
+    this.ultimoBonus.set(pid, ahora);
+    const transcurrido = ahora - (this.inicio.get(pid) ?? ahora);
+    const minimoRestante = Math.max(0, MINIGAME_MIN - transcurrido);
+    pz.tiempo = Math.max(minimoRestante, pz.tiempo - MINIGAME_BONUS);
   }
 
   // ------------------------------------------------------------------ eventos de jugadores
@@ -363,11 +379,8 @@ export class Puzzles {
     const pz = this.pz("p6");
     if (pz.estado === "resuelto") return;
     if (pz.estado === "bloqueado") return this.g.aviso(`Válvulas bloqueadas: ${Math.ceil(pz.tiempo)} s.`, "info", id);
+    if (pz.estado === "activo") return;
     const role: AlienKind = parte === "A" ? "cambiaformas" : "delmar";
-    if (pz.estado === "activo") {
-      // Volver a la palanca durante la pausa
-      return;
-    }
     if (!this.g.qualifies(p, role)) return this.g.aviso(`Esta palanca es del ${ALIENS[role].nombre} (o de quien lleve su alma).`, "info", id);
     this.palancas[parte] = id;
     const otra = parte === "A" ? "B" : "A";
@@ -387,41 +400,25 @@ export class Puzzles {
     const opB = solo ? id : this.palancas.B;
     pz.estado = "activo";
     pz.solo = solo;
-    pz.total = pz.tiempo = ESCLUSA.rounds * (ESCLUSA.roundTime + ESCLUSA.pause);
+    pz.total = pz.tiempo = PUZZLES.p6.duracion;
     pz.actores = solo ? id : `${opA},${opB}`;
-    this.esclusa = {
-      ronda: 1,
-      fase: "espera",
-      inicio: 0,
-      pausaT: 3,
-      notas: [],
-      hitsA: [],
-      hitsB: [],
-      evaluada: [],
-      fallos: 0,
-      agua: 0,
-      aguaT: 4,
-      opA,
-      opB,
-      ultimoError: -9,
-    };
+    this.esclusa = { fase: "espera", inicio: 0, esperaT: 3, notas: [], hitsA: [], hitsB: [], evaluada: [], fallos: 0, opA, opB, ultimoError: -9 };
     this.g.aviso(
       solo
-        ? `${p.nombre} maneja las dos palancas: F = válvula A, J = válvula B. Sigue las órdenes de la pantalla.`
-        : "¡Válvulas en marcha! Pulsen ESPACIO solo cuando la orden les toque: «solo A», «solo B» o «¡AMBOS!».",
+        ? `${p.nombre} maneja las dos palancas: F = válvula A, J = válvula B. Sigue las órdenes; si las cumples rápido, termina antes.`
+        : "¡Válvulas en marcha! Pulsen ESPACIO solo cuando la orden les toque. Si las cumplen rápido, termina antes.",
       "info",
     );
     this.g.director.onPuzzleStart("p6");
     this.syncEsclusa();
   }
 
-  /** Órdenes de una ronda: una tras otra, sin solaparse. */
-  private generarNotas(ronda: number): Nota[] {
-    const cfg = ESCLUSA.ordenes[Math.min(ronda, ESCLUSA.ordenes.length) - 1];
+  /** Órdenes para todo el tiempo máximo, una tras otra, sin solaparse. */
+  private generarNotas(): Nota[] {
     const notas: Nota[] = [];
-    for (let t = 1.5; t + cfg.dura < ESCLUSA.roundTime; t += cfg.cada) {
+    for (let t = 1.5; t + ESCLUSA.dura < PUZZLES.p6.duracion; t += ESCLUSA.cada) {
       const r = Math.random();
-      notas.push({ t: Math.round(t * 100) / 100, d: cfg.dura, l: r < 0.36 ? "AB" : r < 0.68 ? "A" : "B" });
+      notas.push({ t: Math.round(t * 100) / 100, d: ESCLUSA.dura, l: r < 0.36 ? "AB" : r < 0.68 ? "A" : "B" });
     }
     return notas;
   }
@@ -430,68 +427,44 @@ export class Puzzles {
     const e = this.esclusa;
     const pz = this.pz("p6");
     if (!e) return;
-    pz.tiempo = Math.max(0, pz.tiempo - dt);
-    // Agua que entra (el del mar la transmuta)
-    e.aguaT -= dt;
-    if (e.aguaT <= 0) {
-      e.aguaT = e.fase === "ritmo" ? 5 : 2.2;
-      this.spawnAgua();
-    }
-    let agua = 0;
-    this.g.state.objetos.forEach((o) => o.k === "charco_agua" && agua++);
-    e.agua = agua;
-    if (agua > ESCLUSA.maxWater) return this.fail("p6", "¡La sala se inundó!");
     const opA = this.player(e.opA);
     const opB = this.player(e.opB);
     if (!opA?.vivo || !opB?.vivo) return this.fail("p6", "Falta quien maneje una palanca.");
-    const leverA = this.get("lever", "p6").find((l) => l.props.parte === "A")!;
-    const leverB = this.get("lever", "p6").find((l) => l.props.parte === "B")!;
-    const solo = pz.solo;
-    const cerca = (p: Player, l: MapObject) => dist(p.x, p.y, l.x, l.y) <= INTERACT_RANGE + 20;
-    if (e.fase === "espera" || e.fase === "pausa") {
-      e.pausaT -= dt;
-      const listos = solo ? cerca(opA, leverA) || cerca(opA, leverB) : cerca(opA, leverA) && cerca(opB, leverB);
-      if (e.pausaT <= 0 && listos) {
-        e.fase = "ritmo";
-        e.inicio = this.g.time + 0.5;
-        e.notas = this.generarNotas(e.ronda);
-        e.hitsA = e.notas.map(() => false);
-        e.hitsB = e.notas.map(() => false);
-        e.evaluada = e.notas.map(() => false);
-        opA.ocupado = "p6";
-        opB.ocupado = "p6";
-        this.syncEsclusa();
-      } else if (e.pausaT <= 0) {
-        e.pausaT = 0;
-        this.syncEsclusa();
-      }
+    if (e.fase === "espera") {
+      e.esperaT -= dt;
+      if (e.esperaT > 0) return;
+      e.fase = "ritmo";
+      e.inicio = this.g.time + 0.5;
+      this.inicio.set("p6", e.inicio);
+      e.notas = this.generarNotas();
+      e.hitsA = e.notas.map(() => -1);
+      e.hitsB = e.notas.map(() => -1);
+      e.evaluada = e.notas.map(() => false);
+      opA.ocupado = "p6";
+      opB.ocupado = "p6";
+      this.syncEsclusa();
       return;
     }
-    // Ritmo: evaluar notas pasadas
+    pz.tiempo -= dt;
     const ahora = this.g.time - e.inicio;
     let cambio = false;
     e.notas.forEach((n, i) => {
       if (e.evaluada[i] || ahora < n.t + n.d + 0.5) return;
       e.evaluada[i] = true;
-      const ok = n.l === "A" ? e.hitsA[i] : n.l === "B" ? e.hitsB[i] : e.hitsA[i] && e.hitsB[i];
-      if (!ok) {
+      const pulsos = n.l === "A" ? [e.hitsA[i]] : n.l === "B" ? [e.hitsB[i]] : [e.hitsA[i], e.hitsB[i]];
+      if (pulsos.some((h) => h < 0)) {
         e.fallos++;
         cambio = true;
+      } else if (Math.max(...pulsos) <= n.t + n.d * ESCLUSA.rapida) {
+        // Orden cumplida rápido: resta tiempo.
+        this.bonus("p6");
       }
     });
     if (e.fallos >= ESCLUSA.maxMisses) return this.fail("p6", "Demasiadas órdenes falladas.");
-    if (ahora >= ESCLUSA.roundTime + 0.8) {
+    if (pz.tiempo <= 0) {
       opA.ocupado = "";
       opB.ocupado = "";
-      if (e.ronda >= ESCLUSA.rounds) {
-        this.limpiarAgua();
-        return this.resolve("p6");
-      }
-      e.ronda++;
-      e.fase = "pausa";
-      e.pausaT = ESCLUSA.pause;
-      this.g.aviso(`Ronda ${e.ronda - 1} superada. Pausa de ${ESCLUSA.pause} s: ¡el del mar transmuta el agua! Luego vuelvan a las palancas.`, "info");
-      cambio = true;
+      return this.resolve("p6");
     }
     if (cambio) this.syncEsclusa();
   }
@@ -510,55 +483,30 @@ export class Puzzles {
     }
     const i = msg.nota | 0;
     if (i < 0 || i >= e.notas.length || e.evaluada[i]) return;
+    const cuando = this.g.time - e.inicio;
     const pz = this.pz("p6");
-    const lane = msg.lane;
     if (pz.solo) {
       if (id !== e.opA) return;
-      if (lane === "A") e.hitsA[i] = true;
-      else if (lane === "B") e.hitsB[i] = true;
+      if (msg.lane === "A" && e.hitsA[i] < 0) e.hitsA[i] = cuando;
+      else if (msg.lane === "B" && e.hitsB[i] < 0) e.hitsB[i] = cuando;
       return;
     }
-    if (id === e.opA) e.hitsA[i] = true;
-    if (id === e.opB) e.hitsB[i] = true;
+    if (id === e.opA && e.hitsA[i] < 0) e.hitsA[i] = cuando;
+    if (id === e.opB && e.hitsB[i] < 0) e.hitsB[i] = cuando;
   }
 
   private syncEsclusa(): void {
     const e = this.esclusa;
     if (!e) return;
     this.pz("p6").datos = JSON.stringify({
-      ronda: e.ronda,
       fase: e.fase,
       inicio: e.inicio,
-      pausa: e.pausaT,
       notas: e.notas,
       fallos: e.fallos,
       max: ESCLUSA.maxMisses,
       opA: e.opA,
       opB: e.opB,
     });
-  }
-
-  private spawnAgua(): void {
-    const z = this.get("water_zone", "p6")[0];
-    if (!z) return;
-    for (let k = 0; k < 6; k++) {
-      const x = z.x + Math.random() * z.w;
-      const y = z.y + Math.random() * z.h;
-      if (this.g.world.blocksMoveAt(x, y)) continue;
-      const o = new Prop();
-      o.k = "charco_agua";
-      o.x = Math.round(x);
-      o.y = Math.round(y);
-      o.dueno = "p6";
-      this.g.state.objetos.set(this.g.id("o"), o);
-      return;
-    }
-  }
-
-  private limpiarAgua(): void {
-    const remove: string[] = [];
-    this.g.state.objetos.forEach((o, oid) => o.k === "charco_agua" && remove.push(oid));
-    for (const id of remove) this.g.state.objetos.delete(id);
   }
 
   private resetEsclusa(): void {
@@ -571,7 +519,6 @@ export class Puzzles {
     }
     this.esclusa = null;
     this.palancas = { A: "", B: "" };
-    this.limpiarAgua();
   }
 
   // ------------------------------------------------------------------ habilidades sobre objetos de puzzle
@@ -678,15 +625,9 @@ export class Puzzles {
     this.g.state.objetos.forEach((o, oid) => {
       if (target) return;
       if (o.k === "bloque" && o.st === "hundiendo" && dist(x, y, o.x, o.y) < 50) target = [oid, o];
-      else if (o.k === "charco_agua" && dist(x, y, o.x, o.y) < 55) target = [oid, o];
     });
     if (!target) return null;
-    const [oid, o] = target as [string, Prop];
-    if (o.k === "charco_agua") {
-      this.g.state.objetos.delete(oid);
-      this.g.fx("transmutar", o.x, o.y, { c: 0x5ab8ff, x2: p.x, y2: p.y });
-      return 0.8;
-    }
+    const [, o] = target as [string, Prop];
     o.k = "puente";
     o.st = "";
     o.dueno = "p5";

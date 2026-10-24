@@ -1,6 +1,6 @@
 // Válvulas a la vez (dúo Cambiaformas + Del mar): la pantalla da órdenes de una en una
 // («solo A», «solo B» o «¡AMBOS!») y cada uno pulsa su válvula cuando le toca.
-import { ESCLUSA, ERRORES_PERMITIDOS } from "@dawg/shared";
+import { ERRORES_PERMITIDOS, MINIGAME_BONUS } from "@dawg/shared";
 import Phaser from "phaser";
 import type { PuzzleS } from "../../net/tipos";
 import { TEXTO, TITULO, tiempoServidor } from "../contexto";
@@ -14,10 +14,8 @@ interface Nota {
 }
 
 interface Datos {
-  ronda: number;
-  fase: "ritmo" | "pausa" | "espera";
+  fase: "ritmo" | "espera";
   inicio: number;
-  pausa: number;
   notas: Nota[];
   fallos: number;
   max: number;
@@ -81,7 +79,7 @@ export class MgValvulas extends Minijuego {
       this.raw = pz.datos;
       try {
         const nuevo = JSON.parse(pz.datos) as Datos;
-        if (!this.d || nuevo.ronda !== this.d.ronda || nuevo.inicio !== this.d.inicio) this.pulsadas.clear();
+        if (!this.d || nuevo.inicio !== this.d.inicio) this.pulsadas.clear();
         this.d = nuevo;
       } catch {
         return;
@@ -118,8 +116,8 @@ export class MgValvulas extends Minijuego {
 
     // Textos
     if (!ritmo) {
-      this.orden.setText(d.fase === "pausa" && d.pausa > 0 ? `Pausa ${Math.ceil(d.pausa)} s` : "¡A las palancas!").setColor("#3ef0ff");
-      this.accion.setText(d.fase === "pausa" ? "Del mar: transmuta los charcos de agua (ESPACIO sobre ellos)." : "Vuelvan junto a su palanca para seguir.").setColor("#eaf6ff");
+      this.orden.setText("¡Prepárense!").setColor("#3ef0ff");
+      this.accion.setText("Las órdenes empiezan en un momento.").setColor("#eaf6ff");
     } else if (actual >= 0) {
       const n = d.notas[actual];
       this.orden.setText(TEXTO_ORDEN[n.l]).setColor("#" + COLOR_ORDEN[n.l].toString(16).padStart(6, "0"));
@@ -132,7 +130,7 @@ export class MgValvulas extends Minijuego {
       this.accion.setText(siguiente ? `Siguiente: ${TEXTO_ORDEN[siguiente.l]}` : "").setColor("#8fb0c8");
     }
     if (this.time.now < this.feedbackHasta) this.accion.setText(this.feedback).setColor(this.feedbackOk ? "#7dff6a" : "#ff6a6a");
-    this.sub.setText(`Ronda ${d.ronda}/${ESCLUSA.rounds} · ${solo ? "F = válvula A · J = válvula B" : `Tú eres la válvula ${this.miCarril()} (ESPACIO)`}`);
+    this.sub.setText(`${solo ? "F = válvula A · J = válvula B" : `Tú eres la válvula ${this.miCarril()} (ESPACIO)`} · cada orden cumplida rápido resta ${MINIGAME_BONUS} s`);
 
     // Barra de tiempo de la orden y errores (los cuenta el servidor para los dos)
     const g = this.g.clear();
