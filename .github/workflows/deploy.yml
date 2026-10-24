@@ -3,8 +3,8 @@
 # la pestaña "Actions" (botón "Run workflow").
 #
 # Hace lo mismo que el paso 7 de DESPLIEGUE.md: crea dawg-vps.zip, lo sube por
-# SSH, lo descomprime en ~ del VPS y reconstruye el contenedor. El .env del VPS
-# no se toca. Las partidas en curso se cortan.
+# SSH, lo descomprime en la carpeta del VPS y reconstruye el contenedor. El .env
+# del VPS no se toca. Las partidas en curso se cortan.
 #
 # Secretos (Settings → Secrets and variables → Actions → Secrets):
 #   VPS_HOST         IP o nombre del VPS
@@ -14,6 +14,8 @@
 #                    la huella que dé el VPS en ese momento
 # Variables (misma pantalla → Variables), todas opcionales:
 #   VPS_PORT         puerto SSH (por defecto 22)
+#   VPS_CARPETA      carpeta del VPS, relativa a ~, donde está dawg/
+#                    (por defecto ".", o sea ~/dawg)
 #   VPS_COMPOSE_DIR  carpeta dentro de dawg/ con el docker-compose.yml que usas:
 #                    deploy (opción A, por defecto), deploy/solo-juego (opción B)
 #                    o deploy/http
@@ -47,6 +49,7 @@ jobs:
       VPS_HOST: ${{ secrets.VPS_HOST }}
       VPS_USER: ${{ secrets.VPS_USER }}
       VPS_PORT: ${{ vars.VPS_PORT || '22' }}
+      VPS_CARPETA: ${{ vars.VPS_CARPETA || '.' }}
       VPS_COMPOSE_DIR: ${{ vars.VPS_COMPOSE_DIR || 'deploy' }}
     steps:
       - uses: actions/checkout@v5
@@ -92,15 +95,16 @@ jobs:
           EOF
 
       - name: Subir el paquete
-        run: scp dawg-vps.zip vps:~/dawg-vps.zip
+        run: scp dawg-vps.zip "vps:$VPS_CARPETA/dawg-vps.zip"
 
       - name: Reconstruir y reiniciar
         run: |
-          ssh vps sh -s -- "$VPS_COMPOSE_DIR" <<'EOF'
+          ssh vps sh -s -- "$VPS_CARPETA" "$VPS_COMPOSE_DIR" <<'EOF'
           set -e
           cd ~
+          cd "$1"
           unzip -oq dawg-vps.zip
-          cd "dawg/$1"
+          cd "dawg/$2"
           echo "==> Construyendo la imagen nueva en $(pwd)…"
           docker compose build dawg
           echo "==> Reiniciando…"
