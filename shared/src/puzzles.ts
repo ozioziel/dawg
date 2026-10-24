@@ -2,7 +2,10 @@
 import type { AlienKind } from "./aliens";
 import { CORE_STATION_DURATION, MINIGAME_DURATION } from "./constants";
 
-export type MinigameKind = "orbe" | "identidad" | "tuberias" | "rayos" | "puente" | "esclusa";
+export type MinigameKind = "memoria" | "cara" | "transmutacion" | "rayos" | "puente" | "valvulas";
+
+/** Errores permitidos en un minijuego; con uno más, falla. */
+export const ERRORES_PERMITIDOS = 4;
 export type PuzzleTipo = "individual" | "duo" | "nucleo";
 
 export interface PuzzleDef {
@@ -21,33 +24,33 @@ export interface PuzzleDef {
 export const PUZZLES: Record<string, PuzzleDef> = {
   p1: {
     id: "p1",
-    nombre: "Orbe inestable",
+    nombre: "Memoria psíquica",
     sala: "Cámara de contención",
     tipo: "individual",
     roles: ["inteligente"],
-    minijuego: "orbe",
+    minijuego: "memoria",
     duracion: MINIGAME_DURATION,
-    descripcion: "Guía el orbe con telequinesis entre los láseres. Si te pegan, pierdes concentración.",
+    descripcion: "Las zonas del cerebro se iluminan en orden: repítelas. Cada acierto alarga la secuencia.",
   },
   p2: {
     id: "p2",
-    nombre: "Control de identidad",
+    nombre: "Copia la cara",
     sala: "Archivo de seguridad",
     tipo: "individual",
     roles: ["cambiaformas"],
-    minijuego: "identidad",
+    minijuego: "cara",
     duracion: MINIGAME_DURATION,
-    descripcion: "Disfrazado, pasa el escáner: credencial, pulso y preguntas. Si te pegan, se rompe el disfraz.",
+    descripcion: "Disfrazado, arma la cara del científico que pide el escáner: pelo, gafas, boca y placa.",
   },
   p3: {
     id: "p3",
-    nombre: "Flujo alienígena",
+    nombre: "Transmutación",
     sala: "Sala de tuberías",
     tipo: "individual",
     roles: ["delmar"],
-    minijuego: "tuberias",
+    minijuego: "transmutacion",
     duracion: MINIGAME_DURATION,
-    descripcion: "Transmuta las tuberías para llevar el líquido a la cerradura antes del desagüe.",
+    descripcion: "Por la cinta pasan objetos: conviértelos en lo que pide su cartel (coral, pulpo o burbuja).",
   },
   p4: {
     id: "p4",
@@ -71,13 +74,13 @@ export const PUZZLES: Record<string, PuzzleDef> = {
   },
   p6: {
     id: "p6",
-    nombre: "Esclusa doble",
+    nombre: "Válvulas a la vez",
     sala: "Esclusa",
     tipo: "duo",
     roles: ["cambiaformas", "delmar"],
-    minijuego: "esclusa",
+    minijuego: "valvulas",
     duracion: MINIGAME_DURATION,
-    descripcion: "Cada uno ve la mitad del ritmo; las notas dobles se pulsan a la vez. El del mar transmuta el agua entre rondas.",
+    descripcion: "Sigan las órdenes de la pantalla: «solo A», «solo B» o «¡AMBOS!». El del mar limpia el agua entre rondas.",
   },
   n1: {
     id: "n1",
@@ -85,36 +88,36 @@ export const PUZZLES: Record<string, PuzzleDef> = {
     sala: "Núcleo",
     tipo: "nucleo",
     roles: ["inteligente"],
-    minijuego: "orbe",
+    minijuego: "memoria",
     duracion: CORE_STATION_DURATION,
-    descripcion: "Versión corta del orbe. Rompe un depósito del jefe.",
+    descripcion: "Versión corta de la memoria psíquica. Rompe un depósito del jefe.",
   },
   n2: {
     id: "n2",
-    nombre: "Estación de identidad",
+    nombre: "Estación del disfraz",
     sala: "Núcleo",
     tipo: "nucleo",
     roles: ["cambiaformas"],
-    minijuego: "identidad",
+    minijuego: "cara",
     duracion: CORE_STATION_DURATION,
-    descripcion: "Versión corta del escáner. Rompe un depósito del jefe.",
+    descripcion: "Versión corta de copia la cara. Rompe un depósito del jefe.",
   },
   n3: {
     id: "n3",
-    nombre: "Estación de flujo",
+    nombre: "Estación de transmutación",
     sala: "Núcleo",
     tipo: "nucleo",
     roles: ["delmar"],
-    minijuego: "tuberias",
+    minijuego: "transmutacion",
     duracion: CORE_STATION_DURATION,
-    descripcion: "Versión corta de las tuberías. Rompe un depósito del jefe.",
+    descripcion: "Versión corta de la transmutación. Rompe un depósito del jefe.",
   },
 };
 
 /** Qué necesita cada puerta para abrirse. */
 export const DOOR_RULES: Record<string, { requiere: string[]; texto: string }> = {
   D0: { requiere: ["tutorial"], texto: "Acaba con los guardias de las incubadoras" },
-  D1: { requiere: ["p1"], texto: "Resuelve el Orbe inestable" },
+  D1: { requiere: ["p1"], texto: "Resuelve la Memoria psíquica" },
   D4: { requiere: ["p1", "p2", "p3"], texto: "Resuelve las tres salas individuales" },
   D5: { requiere: ["p1", "p2", "p3"], texto: "Resuelve las tres salas individuales" },
   D6: { requiere: ["p1", "p2", "p3"], texto: "Resuelve las tres salas individuales" },
@@ -133,17 +136,24 @@ export const RAYOS_SIMBOLOS = [
 ];
 
 export const PUENTE = {
-  sinkTime: 9,
+  sinkTime: 16,
   slots: 6,
 };
 
+/** Válvulas a la vez: órdenes una a una, con tiempo de sobra para pulsar. */
 export const ESCLUSA = {
   rounds: 3,
   roundTime: 20,
   pause: 10,
-  maxMisses: 4,
+  /** Al llegar a este número de fallos, se falla (se permiten ERRORES_PERMITIDOS). */
+  maxMisses: ERRORES_PERMITIDOS + 1,
   maxWater: 9,
-  hitWindow: 0.16,
+  /** Por ronda: cada cuántos segundos llega una orden y cuánto dura para pulsar. */
+  ordenes: [
+    { cada: 3.4, dura: 2.4 },
+    { cada: 2.9, dura: 2.0 },
+    { cada: 2.5, dura: 1.7 },
+  ],
 };
 
 export function puzzleFor(id: string): PuzzleDef | undefined {
