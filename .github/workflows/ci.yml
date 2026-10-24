@@ -1,0 +1,70 @@
+# CI de dawg: comprueba que todo compila, que una partida con bots funciona
+# y que la imagen Docker arranca. Se ejecuta en cada push (cualquier rama).
+# Los resultados se ven en la pestaña "Actions" de GitHub y en los pull requests.
+name: CI
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Si subes otro push a la misma rama, se cancela la ejecución anterior.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    name: Tipos, build y prueba con bots
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci --no-audit --no-fund
+
+      - name: Comprobar tipos
+        run: npm run typecheck
+
+      - name: Compilar servidor y cliente
+        run: npm run build
+
+      - name: Prueba con bots (3 jugadores, 20 s)
+        env:
+          JUGADORES_MINIMOS: "3"
+        run: |
+          npm start > servidor.log 2>&1 &
+          curl -fsS --retry 30 --retry-delay 1 --retry-all-errors http://127.0.0.1:2567/salud
+          echo
+          npm run prueba:bots -- ws://127.0.0.1:2567 20
+
+      - name: Log del servidor
+        if: always()
+        run: cat servidor.log || true
+
+  docker:
+    name: Imagen Docker
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Construir imagen
+        run: docker build -t dawg:ci .
+
+      - name: Arrancar la imagen y comprobar /salud
+        run: |
+          docker run -d --name dawg -p 2567:2567 dawg:ci
+          curl -fsS --retry 30 --retry-delay 1 --retry-all-errors http://127.0.0.1:2567/salud
+
+      - name: Log del contenedor
+        if: failure()
+        run: docker logs dawg || true

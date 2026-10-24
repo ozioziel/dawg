@@ -1,0 +1,16 @@
+# dawg por HTTP en un solo puerto (sin HTTPS, sin itch.io).
+# El juego queda en http://TU-IP:6703
+# Uso (dentro de deploy/http):  docker compose up -d --build
+services:
+  dawg:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: dawg:latest
+    container_name: dawg
+    restart: unless-stopped
+    environment:
+      PORT: "2567"
+      JUGADORES_MINIMOS: "3"
+    ports:
+      - "6703:2567"

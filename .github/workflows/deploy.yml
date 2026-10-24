@@ -1,0 +1,132 @@
+# Despliegue automático de dawg en el VPS.
+# Se ejecuta solo cuando el CI termina bien en un push a main, o a mano desde
+# la pestaña "Actions" (botón "Run workflow").
+#
+# Hace lo mismo que el paso 7 de DESPLIEGUE.md: crea dawg-vps.zip, lo sube por
+# SSH, lo descomprime en la carpeta del VPS y reconstruye el contenedor. El .env
+# del VPS no se toca. Las partidas en curso se cortan.
+#
+# Secretos (Settings → Secrets and variables → Actions → Secrets):
+#   VPS_HOST         IP o nombre del VPS
+#   VPS_USER         usuario SSH (tiene que poder usar docker sin sudo)
+#   VPS_SSH_KEY      clave privada SSH, creada solo para esto
+#   VPS_KNOWN_HOSTS  (opcional) salida de "ssh-keyscan IP"; si falta, se acepta
+#                    la huella que dé el VPS en ese momento
+# Variables (misma pantalla → Variables), todas opcionales:
+#   VPS_PORT         puerto SSH (por defecto 22)
+#   VPS_CARPETA      carpeta del VPS, relativa a ~, donde está dawg/
+#                    (por defecto ".", o sea ~/dawg)
+#   VPS_COMPOSE_DIR  carpeta dentro de dawg/ con el docker-compose.yml que usas:
+#                    deploy (opción A, por defecto), deploy/solo-juego (opción B)
+#                    o deploy/http
+name: Deploy VPS
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Nunca dos despliegues a la vez; si llega otro, espera a que acabe el actual.
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
+jobs:
+  desplegar:
+    name: Subir y reiniciar en el VPS
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: produccion
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_PORT: ${{ vars.VPS_PORT || '22' }}
+      VPS_CARPETA: ${{ vars.VPS_CARPETA || '.' }}
+      VPS_COMPOSE_DIR: ${{ vars.VPS_COMPOSE_DIR || 'deploy' }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # El commit exacto que pasó el CI (o la rama elegida a mano).
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Crear dawg-vps.zip
+        run: |
+          npm ci --no-audit --no-fund
+          npm run paquete:vps
+
+      - name: Preparar SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          if [ -z "$VPS_HOST" ] || [ -z "$VPS_USER" ] || [ -z "$VPS_SSH_KEY" ]; then
+            echo "::error::Faltan los secretos VPS_HOST, VPS_USER o VPS_SSH_KEY"
+            exit 1
+          fi
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          if [ -n "$VPS_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -p "$VPS_PORT" "$VPS_HOST" > ~/.ssh/known_hosts
+          fi
+          cat > ~/.ssh/config <<EOF
+          Host vps
+            HostName $VPS_HOST
+            User $VPS_USER
+            Port $VPS_PORT
+            IdentityFile ~/.ssh/id_deploy
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+          EOF
+
+      - name: Subir el paquete
+        run: scp dawg-vps.zip "vps:$VPS_CARPETA/dawg-vps.zip"
+
+      - name: Reconstruir y reiniciar
+        run: |
+          ssh vps sh -s -- "$VPS_CARPETA" "$VPS_COMPOSE_DIR" <<'EOF'
+          set -e
+          cd ~
+          cd "$1"
+          unzip -oq dawg-vps.zip
+          cd "dawg/$2"
+          echo "==> Construyendo la imagen nueva en $(pwd)…"
+          docker compose build dawg
+          echo "==> Reiniciando…"
+          docker compose up -d
+          docker image prune -f >/dev/null
+
+          echo "==> Esperando a que el contenedor esté sano…"
+          for i in $(seq 1 30); do
+            estado=$(docker inspect -f '{{.State.Health.Status}}' dawg 2>/dev/null || echo desconocido)
+            echo "   $estado"
+            if [ "$estado" = healthy ]; then
+              docker compose ps
+              exit 0
+            fi
+            [ "$estado" = unhealthy ] && break
+            sleep 5
+          done
+          echo "El contenedor no quedó sano. Últimas líneas del log:"
+          docker compose logs --tail 50 dawg
+          exit 1
+          EOF
+
+      - name: Borrar la clave SSH
+        if: always()
+        run: rm -f ~/.ssh/id_deploy
