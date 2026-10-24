@@ -25,6 +25,9 @@ export class MgMemoria extends Minijuego {
   private pulsado = -1;
   private pulsadoHasta = 0;
   private hechas = 0;
+  /** Cuándo empezó a responder y si se equivocó en esta secuencia. */
+  private inicioRespuesta = 0;
+  private falloSecuencia = false;
   private estado!: Phaser.GameObjects.Text;
 
   constructor() {
@@ -37,6 +40,7 @@ export class MgMemoria extends Minijuego {
     this.hechas = 0;
     this.numeros = undefined;
     this.pulsado = -1;
+    this.falloSecuencia = false;
     this.agregar(3);
     this.empezarPausa(1.2);
     // Cerebro de fondo
@@ -50,7 +54,7 @@ export class MgMemoria extends Minijuego {
     this.cont.addAt(b, 1);
     this.estado = this.add.text(this.pw / 2, 96, "", { ...TEXTO, fontSize: "20px", color: "#ffd23e" }).setOrigin(0.5);
     const ayuda = this.add
-      .text(this.pw / 2, this.ph - 14, "Mira qué zonas se iluminan y repítelas en el mismo orden (clic o teclas 1-6).", {
+      .text(this.pw / 2, this.ph - 14, "Mira qué zonas se iluminan y repítelas en el mismo orden (clic o teclas 1-6). Si lo haces rápido y sin fallos, termina antes.", {
         ...TEXTO,
         fontSize: "14px",
         color: "#a9c6db",
@@ -92,13 +96,18 @@ export class MgMemoria extends Minijuego {
     this.pulsado = i;
     this.pulsadoHasta = this.time.now + 220;
     if (this.secuencia[this.paso] !== i) {
+      this.falloSecuencia = true;
       this.error("Zona equivocada. Mira otra vez.");
       this.empezarPausa(1);
       return;
     }
     this.paso++;
     if (this.paso >= this.secuencia.length) {
-      this.acierto();
+      // Rápida: sin fallos y menos de ~0,9 s por zona al responder.
+      const tardo = (this.time.now - this.inicioRespuesta) / 1000;
+      if (!this.falloSecuencia && tardo <= this.secuencia.length * 0.9 + 1.2) this.aciertoRapido();
+      else this.acierto();
+      this.falloSecuencia = false;
       this.hechas++;
       if (this.secuencia.length < 8) this.agregar(1);
       this.empezarPausa(1);
@@ -122,6 +131,7 @@ export class MgMemoria extends Minijuego {
           if (this.paso >= this.secuencia.length) {
             this.fase = "repetir";
             this.paso = 0;
+            this.inicioRespuesta = this.time.now;
           }
         } else {
           this.encendido = this.secuencia[this.paso];

@@ -1,7 +1,8 @@
 // Base de los minijuegos: panel centrado, título, tiempo restante y contador de errores.
 // Reglas comunes: se permiten ERRORES_PERMITIDOS errores; con uno más, falla.
 // Recibir un golpe cuenta como un error (como mucho uno cada 1,5 s).
-import { ERRORES_PERMITIDOS, PUZZLES, type PuzzleDef } from "@dawg/shared";
+// Duran de 30 a 60 s: cada acierto rápido resta 5 s (lo aplica el servidor).
+import { ERRORES_PERMITIDOS, MINIGAME_BONUS, PUZZLES, type PuzzleDef } from "@dawg/shared";
 import Phaser from "phaser";
 import type { PuzzleS } from "../../net/tipos";
 import { TEXTO, TITULO, ctx, type Ctx } from "../contexto";
@@ -32,6 +33,7 @@ export abstract class Minijuego extends Phaser.Scene {
   private avisoHasta = 0;
   private hpPrev = -1;
   private ultimoGolpe = -99;
+  private tiempoPrev = -1;
 
   init(data: { id: string }): void {
     this.id = data.id;
@@ -40,6 +42,7 @@ export abstract class Minijuego extends Phaser.Scene {
     this.errores = 0;
     this.hpPrev = -1;
     this.ultimoGolpe = -99;
+    this.tiempoPrev = -1;
   }
 
   create(): void {
@@ -131,6 +134,19 @@ export abstract class Minijuego extends Phaser.Scene {
     sfx.nota(true);
   }
 
+  /** Acierto bien hecho y rápido: el servidor resta MINIGAME_BONUS segundos. */
+  protected aciertoRapido(): void {
+    sfx.nota(true);
+    if (!this.terminado) this.c.room.send("mg", { id: this.id, ev: "acierto", rapido: true });
+  }
+
+  /** Texto flotante "−5 s" cuando el servidor descuenta tiempo. */
+  private mostrarDescuento(): void {
+    const t = this.add.text(this.pw - 70, 30, `¡Rápido! −${MINIGAME_BONUS} s`, { ...TITULO, fontSize: "24px", color: "#7dff6a" }).setOrigin(1, 0.5);
+    this.cont.add(t);
+    this.tweens.add({ targets: t, y: 4, alpha: 0, duration: 1100, ease: "Cubic.Out", onComplete: () => t.destroy() });
+  }
+
   protected fallar(razon: string): void {
     if (this.terminado) return;
     this.terminado = true;
@@ -144,7 +160,11 @@ export abstract class Minijuego extends Phaser.Scene {
   override update(_t: number, delta: number): void {
     const pz = this.pz;
     if (!pz) return;
-    if (pz.estado === "activo") this.info.setText(`${Math.ceil(pz.tiempo)} s`);
+    if (pz.estado === "activo") {
+      this.info.setText(`${Math.ceil(pz.tiempo)} s`);
+      if (this.tiempoPrev >= 0 && this.tiempoPrev - pz.tiempo > 2) this.mostrarDescuento();
+      this.tiempoPrev = pz.tiempo;
+    }
     if (this.cuentaGolpes && this.golpeRecibido() > 0 && this.time.now - this.ultimoGolpe > 1500) {
       this.ultimoGolpe = this.time.now;
       this.error("¡Te golpearon! Que te defiendan.");

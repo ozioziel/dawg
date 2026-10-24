@@ -31,6 +31,8 @@ export class MgCara extends Minijuego {
   private limite = 14;
   private resta = 14;
   private hechas = 0;
+  /** Si ya se equivocó con el científico actual. */
+  private falloEste = false;
   private estado!: Phaser.GameObjects.Text;
   private escanear = { x: 470, y: 392, w: 190, h: 50 };
 
@@ -73,8 +75,9 @@ export class MgCara extends Minijuego {
     do nuevo = CATEGORIAS.map(() => Phaser.Math.Between(0, 2));
     while (nuevo.every((v, i) => v === this.objetivo[i]));
     this.objetivo = nuevo;
-    this.limite = this.corto ? 9 : Math.max(8, 15 - this.hechas * 1.2);
+    this.limite = 15;
     this.resta = this.limite;
+    this.falloEste = false;
   }
 
   private clic(): void {
@@ -95,11 +98,14 @@ export class MgCara extends Minijuego {
     this.malas.clear();
     this.mio.forEach((v, i) => v !== this.objetivo[i] && this.malas.add(i));
     if (this.malas.size) {
+      this.falloEste = true;
       this.malasHasta = this.time.now + 1500;
       this.error(`No coincide: revisa ${[...this.malas].map((i) => CATEGORIAS[i].nombre.toLowerCase()).join(", ")}.`);
       return;
     }
-    this.acierto();
+    // Rápido: a la primera y en menos de 7 s.
+    if (!this.falloEste && this.limite - this.resta <= 7) this.aciertoRapido();
+    else this.acierto();
     this.hechas++;
     this.nuevoCientifico();
   }
