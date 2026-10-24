@@ -19,8 +19,10 @@ import {
 import { Player, Prop, Puzzle } from "../schema/GameState";
 import type { Partida } from "./Partida";
 
+/** Orden de las válvulas: empieza en t, dura d segundos; l = quién debe pulsar. */
 interface Nota {
   t: number;
+  d: number;
   l: "A" | "B" | "AB";
 }
 
@@ -113,10 +115,7 @@ export class Puzzles {
     if (pz.estado === "bloqueado") return this.g.aviso(`Consola bloqueada: ${Math.ceil(pz.tiempo)} s.`, "info", id);
     if (pz.estado === "activo") return;
     if (!this.g.qualifies(p, role)) return this.g.aviso(`Solo el ${ALIENS[role].nombre} (o quien lleve su alma) puede usar esta consola.`, "info", id);
-    if (def.minijuego === "identidad" && !p.disfrazado) return this.g.aviso("Necesitas estar disfrazado de humano para pasar el escáner (ESPACIO).", "info", id);
-    if (pid.startsWith("n") && !this.g.state.jefe && !this.g.flags.has("jefe")) {
-      // El jefe aparece al entrar a la sala; por si acaso.
-    }
+    if (def.minijuego === "cara" && !p.disfrazado) return this.g.aviso("Necesitas estar disfrazado de humano para usar el escáner (ESPACIO).", "info", id);
     pz.estado = "activo";
     pz.tiempo = def.duracion;
     pz.total = def.duracion;
@@ -140,21 +139,11 @@ export class Puzzles {
   }
 
   // ------------------------------------------------------------------ eventos de jugadores
-  onPlayerHit(id: string, amount: number): void {
-    const p = this.player(id);
-    if (!p || !p.ocupado || amount < 1) return;
-    const pz = this.g.state.puzzles.get(p.ocupado);
-    // El escáner de identidad falla si le pegan al cambiaformas.
-    if (pz && pz.estado === "activo" && PUZZLES[p.ocupado]?.minijuego === "identidad") this.fail(p.ocupado, `¡Le pegaron a ${p.nombre} y se rompió el disfraz!`);
-  }
+  // Recibir golpes, quedar congelado o perder el disfraz ya no hace fallar al instante:
+  // el minijuego del cliente cuenta cada golpe como un error (se permiten ERRORES_PERMITIDOS).
+  onPlayerHit(_id: string, _amount: number): void {}
 
-  onPlayerStatus(id: string): void {
-    const p = this.player(id);
-    if (!p || !p.ocupado) return;
-    const pid = p.ocupado;
-    if (p.estado === "congelado" || p.estado === "red") this.fail(pid, `${p.nombre} quedó ${p.estado === "red" ? "atrapado" : "congelado"} en plena consola.`);
-    else if (!p.disfrazado && PUZZLES[pid]?.minijuego === "identidad") this.fail(pid, "Se rompió el disfraz en el escáner.");
-  }
+  onPlayerStatus(_id: string): void {}
 
   onPlayerDown(id: string): void {
     this.g.state.puzzles.forEach((pz, pid) => {
@@ -178,7 +167,7 @@ export class Puzzles {
       }
       if (pz.estado !== "activo") return;
       const def = PUZZLES[pid];
-      if (def.minijuego === "esclusa") return this.updateEsclusa(dt);
+      if (def.minijuego === "valvulas") return this.updateEsclusa(dt);
       pz.tiempo -= dt;
       if (def.minijuego === "puente") this.updatePuente(dt);
       if (def.tipo === "individual" || def.tipo === "nucleo") {
@@ -369,11 +358,11 @@ export class Puzzles {
     });
   }
 
-  // ------------------------------------------------------------------ P6: Esclusa doble
+  // ------------------------------------------------------------------ P6: Válvulas a la vez
   private lever(id: string, p: Player, parte: "A" | "B"): void {
     const pz = this.pz("p6");
     if (pz.estado === "resuelto") return;
-    if (pz.estado === "bloqueado") return this.g.aviso(`Esclusa bloqueada: ${Math.ceil(pz.tiempo)} s.`, "info", id);
+    if (pz.estado === "bloqueado") return this.g.aviso(`Válvulas bloqueadas: ${Math.ceil(pz.tiempo)} s.`, "info", id);
     const role: AlienKind = parte === "A" ? "cambiaformas" : "delmar";
     if (pz.estado === "activo") {
       // Volver a la palanca durante la pausa
@@ -416,17 +405,23 @@ export class Puzzles {
       opB,
       ultimoError: -9,
     };
-    this.g.aviso(solo ? `${p.nombre} maneja las dos palancas (F y J). ¡A la vez en las notas dobles!` : "¡Esclusa en marcha! Cada uno ve su mitad del ritmo; las notas dobles se pulsan A LA VEZ.", "info");
+    this.g.aviso(
+      solo
+        ? `${p.nombre} maneja las dos palancas: F = válvula A, J = válvula B. Sigue las órdenes de la pantalla.`
+        : "¡Válvulas en marcha! Pulsen ESPACIO solo cuando la orden les toque: «solo A», «solo B» o «¡AMBOS!».",
+      "info",
+    );
     this.g.director.onPuzzleStart("p6");
     this.syncEsclusa();
   }
 
+  /** Órdenes de una ronda: una tras otra, sin solaparse. */
   private generarNotas(ronda: number): Nota[] {
+    const cfg = ESCLUSA.ordenes[Math.min(ronda, ESCLUSA.ordenes.length) - 1];
     const notas: Nota[] = [];
-    const gap = ronda === 1 ? 1.1 : ronda === 2 ? 0.85 : 0.7;
-    for (let t = 2; t < ESCLUSA.roundTime - 0.5; t += gap * (0.8 + Math.random() * 0.5)) {
+    for (let t = 1.5; t + cfg.dura < ESCLUSA.roundTime; t += cfg.cada) {
       const r = Math.random();
-      notas.push({ t: Math.round(t * 100) / 100, l: r < 0.3 ? "AB" : r < 0.65 ? "A" : "B" });
+      notas.push({ t: Math.round(t * 100) / 100, d: cfg.dura, l: r < 0.36 ? "AB" : r < 0.68 ? "A" : "B" });
     }
     return notas;
   }
@@ -476,7 +471,7 @@ export class Puzzles {
     const ahora = this.g.time - e.inicio;
     let cambio = false;
     e.notas.forEach((n, i) => {
-      if (e.evaluada[i] || ahora < n.t + ESCLUSA.hitWindow + 0.6) return;
+      if (e.evaluada[i] || ahora < n.t + n.d + 0.5) return;
       e.evaluada[i] = true;
       const ok = n.l === "A" ? e.hitsA[i] : n.l === "B" ? e.hitsB[i] : e.hitsA[i] && e.hitsB[i];
       if (!ok) {
@@ -484,7 +479,7 @@ export class Puzzles {
         cambio = true;
       }
     });
-    if (e.fallos >= ESCLUSA.maxMisses) return this.fail("p6", "Demasiadas notas falladas.");
+    if (e.fallos >= ESCLUSA.maxMisses) return this.fail("p6", "Demasiadas órdenes falladas.");
     if (ahora >= ESCLUSA.roundTime + 0.8) {
       opA.ocupado = "";
       opB.ocupado = "";
@@ -505,12 +500,12 @@ export class Puzzles {
     const e = this.esclusa;
     if (!e || e.fase !== "ritmo" || typeof msg.nota !== "number") return;
     if (!msg.ok) {
-      // Pulsar sin nota también cuenta como fallo (evita aporrear la tecla).
-      if (this.g.time - e.ultimoError < 0.3 || (id !== e.opA && id !== e.opB)) return;
+      // Pulsar cuando la orden no te toca también cuenta (evita aporrear la tecla).
+      if (this.g.time - e.ultimoError < 0.8 || (id !== e.opA && id !== e.opB)) return;
       e.ultimoError = this.g.time;
       e.fallos++;
       this.syncEsclusa();
-      if (e.fallos >= ESCLUSA.maxMisses) this.fail("p6", "Demasiadas notas falladas.");
+      if (e.fallos >= ESCLUSA.maxMisses) this.fail("p6", "Demasiadas órdenes falladas.");
       return;
     }
     const i = msg.nota | 0;

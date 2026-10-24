@@ -1010,11 +1010,11 @@ export class Partida {
         .join(" · ");
     let t: string;
     if (!f.has("tutorial")) t = "Sobrevivan a los guardias de las incubadoras.";
-    else if (!f.has("p1")) t = "Cámara de contención: el Inteligente resuelve el Orbe inestable (E en la consola). Los demás, ¡defiéndanlo!";
+    else if (!f.has("p1")) t = "Cámara de contención: el Inteligente resuelve la Memoria psíquica (E en la consola). Los demás, ¡defiéndanlo!";
     else if (!f.has("p2") || !f.has("p3"))
       t = "Desde el hub: " + faltan(["p2", "p3"], { p2: "Archivo de seguridad (Cambiaformas disfrazado, al oeste)", p3: "Sala de tuberías (Del mar, al este)" });
     else if (!f.has("p4") || !f.has("p5") || !f.has("p6"))
-      t = "Pasillo norte, salas de dúo: " + faltan(["p4", "p5", "p6"], { p4: "Sala de rayos", p5: "Piscina de ácido", p6: "Esclusa" });
+      t = "Pasillo norte, salas de dúo: " + faltan(["p4", "p5", "p6"], { p4: "Sala de rayos", p5: "Piscina de ácido", p6: "Válvulas (esclusa)" });
     else if (!f.has("n1") || !f.has("n2") || !f.has("n3") || !f.has("jefe"))
       t = "Núcleo (al sur del hub): activen las 3 estaciones para romper los depósitos del Jefe y derrótenlo.";
     else t = "¡Lleguen a la SALIDA al este del núcleo!";
