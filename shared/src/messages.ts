@@ -43,6 +43,8 @@ export interface MinigameMsg {
   /** Carril de la esclusa cuando una sola persona maneja las dos palancas. */
   lane?: "A" | "B";
   ok?: boolean;
+  /** Acierto hecho bien y rápido: resta tiempo al minijuego. */
+  rapido?: boolean;
   razon?: string;
 }
 

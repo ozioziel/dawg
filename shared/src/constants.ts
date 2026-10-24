@@ -21,9 +21,14 @@ export const FREEZE_AUTO_THAW = 15;
 export const NET_AUTO_FREE = 12;
 
 /** Minijuegos. */
-export const MINIGAME_DURATION = 90;
+/** Los minijuegos duran como mucho esto (si se hacen mal)… */
+export const MINIGAME_DURATION = 60;
+/** …y como poco esto (si se hacen muy bien). */
+export const MINIGAME_MIN = 30;
+/** Segundos que se restan por cada orden cumplida bien y rápido. */
+export const MINIGAME_BONUS = 5;
 export const MINIGAME_LOCK = 30;
-export const CORE_STATION_DURATION = 30;
+export const CORE_STATION_DURATION = MINIGAME_DURATION;
 /** Con un aliado caído, el que hace los dos papeles tiene más tiempo en los dúos. */
 export const SOLO_TIME_FACTOR = 1.5;
 
