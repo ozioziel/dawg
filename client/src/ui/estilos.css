@@ -92,8 +92,10 @@ body {
   padding: clamp(24px, 6vw, 82px);
   color: #d2d0c7;
   font-family: "Courier New", monospace;
-  background-position: center;
-  background-size: cover;
+  background-position: center, center, right center;
+  background-size: cover, cover, contain;
+  background-repeat: no-repeat;
+  background-color: #03060a;
   isolation: isolate;
 }
 
@@ -134,7 +136,6 @@ body {
   max-height: 235px;
   object-fit: contain;
   object-position: left center;
-  filter: grayscale(1) brightness(0) invert(0.88);
 }
 
 .menu-tagline {
@@ -252,7 +253,8 @@ body {
 @media (max-width: 600px) {
   .menu-screen {
     padding: 24px;
-    background-position: 62% center;
+    background-position: center, center, center top;
+    background-size: cover, cover, 100% auto;
   }
 
   .menu-content {

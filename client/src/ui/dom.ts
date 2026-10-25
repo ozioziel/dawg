@@ -27,8 +27,10 @@ export function limpiar(): void {
 
 export function conPortada(el: HTMLElement): HTMLElement {
   el.style.backgroundImage = "linear-gradient(180deg, rgba(5,12,20,.35), rgba(5,12,20,.88)), url(assets/portada.png)";
-  el.style.backgroundSize = "cover";
-  el.style.backgroundPosition = "center";
+  el.style.backgroundSize = "cover, contain";
+  el.style.backgroundPosition = "center, center";
+  el.style.backgroundRepeat = "no-repeat";
+  el.style.backgroundColor = "#050a07";
   return el;
 }
 

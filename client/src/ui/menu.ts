@@ -95,8 +95,7 @@ export function mostrarMenu(alEmpezar: AlEmpezar, error = ""): void {
   nombre.addEventListener("keydown", (e) => {
     if (e.key === "Enter") (crear.hidden ? unirse : crear).click();
   });
-  const pantalla = conPortada(
-    h(
+  const pantalla = h(
       "div",
       { class: "pantalla menu-screen" },
       h(
@@ -115,8 +114,7 @@ export function mostrarMenu(alEmpezar: AlEmpezar, error = ""): void {
         estado,
         panel,
       ),
-    ),
-  );
+    );
   pantalla.style.backgroundImage =
     "linear-gradient(90deg, rgba(3,6,10,.82) 0%, rgba(3,6,10,.66) 42%, rgba(3,6,10,.91) 100%), linear-gradient(0deg, rgba(3,6,10,.5), rgba(3,6,10,.14)), url(assets/portada_itch.png)";
   ui().append(pantalla);
