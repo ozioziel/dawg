@@ -1,5 +1,7 @@
 // Ayudas mínimas para construir la interfaz HTML.
 
+document.documentElement.style.setProperty("--mano-icono", `url("${new URL("assets/ICONmano.png", document.baseURI).href}")`);
+
 export const ui = (): HTMLElement => document.getElementById("ui")!;
 
 export function h<K extends keyof HTMLElementTagNameMap>(
