@@ -12,85 +12,114 @@ export function mostrarMenu(alEmpezar: AlEmpezar, error = ""): void {
   limpiar();
   const nombre = h("input", { type: "text", maxlength: 14, placeholder: "Tu nombre", value: leerLocal("dawg:nombre") });
   const codigo = h("input", { type: "text", maxlength: 4, placeholder: "ABCD", style: "text-transform:uppercase;letter-spacing:.3em;text-align:center" });
-  const err = h("div", { class: "error" }, error);
-  const ocupado = (b: boolean) => {
-    crear.disabled = b;
-    unirse.disabled = b;
-  };
+  nombre.id = "menu-name";
+  codigo.id = "menu-code";
+  const estado = h("div", { class: "menu-status", role: "status" }, error);
+  const err = h("div", { class: "error", role: "alert" });
   const nombreValido = () => {
     const n = nombre.value.trim();
     guardarLocal("dawg:nombre", n);
     return n || "Alien";
   };
-
   const crear = h(
     "button",
     {
+      class: "menu-action",
       onclick: async () => {
-        ocupado(true);
+        crear.disabled = true;
         err.textContent = "Creando sala…";
         try {
           const room = await cliente.create<never>("lobby", { nombre: nombreValido() });
           mostrarLobby(room as unknown as SalaLobby, alEmpezar);
         } catch (e) {
           err.textContent = mensajeError(e);
-          ocupado(false);
+          crear.disabled = false;
         }
       },
     },
-    "Crear sala",
+    "CREAR SALA",
   );
   const unirse = h(
     "button",
     {
-      class: "sec",
+      class: "menu-action",
       onclick: async () => {
         const c = codigo.value.trim().toUpperCase();
         if (c.length !== 4) {
           err.textContent = "El código tiene 4 letras.";
           return;
         }
-        ocupado(true);
+        unirse.disabled = true;
         err.textContent = "Entrando…";
         try {
           const room = await cliente.joinById<never>(c, { nombre: nombreValido() });
           mostrarLobby(room as unknown as SalaLobby, alEmpezar);
         } catch (e) {
           err.textContent = mensajeError(e);
-          ocupado(false);
+          unirse.disabled = false;
         }
       },
     },
-    "Unirse",
+    "UNIRSE",
   );
   codigo.addEventListener("keydown", (e) => e.key === "Enter" && unirse.click());
 
+  const panelTitulo = h("h2", { class: "menu-panel-title" });
+  const campoCodigo = h(
+    "div",
+    { class: "menu-code-field" },
+    h("label", { for: "menu-code" }, "Código de sala"),
+    codigo,
+  );
+  const regresar = h("button", { class: "menu-action menu-back", onclick: () => (panel.hidden = true) }, "REGRESAR");
+  const panel = h(
+    "section",
+    { class: "menu-panel", hidden: true, "aria-labelledby": "menu-panel-title" },
+    panelTitulo,
+    h("label", { for: "menu-name" }, "Nombre del jugador"),
+    nombre,
+    campoCodigo,
+    h("div", { class: "menu-panel-actions" }, crear, unirse, regresar),
+    err,
+  );
+  panelTitulo.id = "menu-panel-title";
+  const abrirPanel = (modo: "crear" | "unirse") => {
+    panel.hidden = false;
+    panelTitulo.textContent = modo === "crear" ? "Nueva partida" : "Unirse a una partida";
+    campoCodigo.hidden = modo !== "unirse";
+    crear.hidden = modo !== "crear";
+    unirse.hidden = modo !== "unirse";
+    err.textContent = "";
+    nombre.focus();
+  };
+  nombre.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") (crear.hidden ? unirse : crear).click();
+  });
   const pantalla = conPortada(
     h(
       "div",
-      { class: "pantalla" },
+      { class: "pantalla menu-screen" },
       h(
-        "div",
-        { class: "caja" },
-        h("h1", { class: "titulo logo" }, "DAWG"),
-        h("p", { class: "titulo subtitulo" }, "Tres aliens. Un Área 51. Ninguna salida fácil."),
-        h("label", {}, "Nombre"),
-        nombre,
-        h("div", { style: "margin-top:18px" }, crear),
-        h("label", {}, "¿Te pasaron un código?"),
-        h("div", { class: "fila" }, codigo, unirse),
-        err,
+        "main",
+        { class: "menu-content" },
+        h("img", { class: "menu-logo", src: "assets/logo.png", alt: "DAWG" }),
+        h("p", { class: "menu-tagline" }, "ÁREA 51 · PROTOCOLO DE CONTENCIÓN"),
         h(
-          "p",
-          { class: "ayuda" },
-          "Cooperativo online para 3 jugadores. Uno crea la sala y comparte el código de 4 letras. ",
-          h("button", { class: "enlace", onclick: () => ayudaControles() }, "Ver controles"),
+          "nav",
+          { class: "menu-options", "aria-label": "Menú principal" },
+          h("button", { class: "menu-action", onclick: () => abrirPanel("crear") }, "CREAR SALA"),
+          h("button", { class: "menu-action", onclick: () => abrirPanel("unirse") }, "UNIRSE"),
+          h("button", { class: "menu-action", onclick: () => ayudaControles() }, "CONTROLES"),
+          h("button", { class: "menu-action", onclick: () => { window.close(); estado.textContent = "Cierra esta pestaña para salir."; } }, "SALIR"),
         ),
+        estado,
+        panel,
       ),
     ),
   );
+  pantalla.style.backgroundImage =
+    "linear-gradient(90deg, rgba(3,6,10,.82) 0%, rgba(3,6,10,.66) 42%, rgba(3,6,10,.91) 100%), linear-gradient(0deg, rgba(3,6,10,.5), rgba(3,6,10,.14)), url(assets/portada_itch.png)";
   ui().append(pantalla);
-  nombre.focus();
 }
 
 function mostrarLobby(room: SalaLobby, alEmpezar: AlEmpezar): void {

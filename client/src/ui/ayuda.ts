@@ -42,7 +42,7 @@ export function ayudaControles(onClose?: () => void): void {
         { class: "ayuda" },
         "Escapen juntos: cada sala tiene un puzzle que solo puede resolver cierto alien mientras los demás lo defienden. Si alguien cae, recojan su alma (E) para tener sus habilidades y hacer los dos papeles.",
       ),
-      h("button", { onclick: cerrar }, "Entendido"),
+      h("button", { onclick: cerrar }, "Regresar"),
     ),
   );
   ui().append(modal);
