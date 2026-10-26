@@ -37,6 +37,12 @@ export class LobbyRoom extends Room<LobbyState> {
       this.revisar();
     });
 
+    this.onMessage("skin", (client) => {
+      const p = this.state.jugadores.get(client.sessionId);
+      if (!p || !p.alien || this.state.estado !== "esperando") return;
+      p.skin = p.skin === 0 ? 1 : 0;
+    });
+
     this.onMessage("mover", (client, msg: LobbyMoveMsg) => {
       const p = this.state.jugadores.get(client.sessionId);
       if (!p || !p.alien || this.state.estado !== "esperando") return;

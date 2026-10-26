@@ -5,6 +5,7 @@ export class LobbyPlayer extends Schema {
   @type("string") alien = "";
   @type("boolean") listo = false;
   @type("boolean") anfitrion = false;
+  @type("uint8") skin = 0;
   @type("float32") x = 0.5;
   @type("float32") y = 0.7;
 }
