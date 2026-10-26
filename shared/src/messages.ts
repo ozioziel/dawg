@@ -9,6 +9,11 @@ export interface PickMsg {
 export interface ReadyMsg {
   ready: boolean;
 }
+/** Posición del alien en el cuarto de espera (fracción 0..1 de la imagen). */
+export interface LobbyMoveMsg {
+  x: number;
+  y: number;
+}
 
 // ---- Juego (cliente → servidor) ----
 export interface InputMsg {

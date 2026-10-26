@@ -54,4 +54,7 @@ export const PING_LABELS: Record<PingType, string> = {
 };
 
 export const ROOM_CODE_LENGTH = 4;
+
+/** Zona caminable del cuarto de espera, en fracción (0..1) de la imagen del cuarto. */
+export const LOBBY_BOUNDS = { minX: 0.12, maxX: 0.88, minY: 0.42, maxY: 0.84 } as const;
 export const ROOM_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ";
