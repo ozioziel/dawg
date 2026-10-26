@@ -125,6 +125,8 @@ export interface LobbyPlayerS {
   alien: string;
   listo: boolean;
   anfitrion: boolean;
+  x: number;
+  y: number;
 }
 
 export interface LobbyStateS {

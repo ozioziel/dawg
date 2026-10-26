@@ -3,8 +3,9 @@ import { ALIENS, ALIEN_KINDS, type AlienKind } from "@dawg/shared";
 import type { SeatReservation } from "colyseus.js";
 import { cliente, guardarReconexion, mensajeError, type SalaJuego, type SalaLobby } from "../net/conexion";
 import type { GameStateS } from "../net/tipos";
-import { conPortada, guardarLocal, h, leerLocal, limpiar, ui } from "./dom";
+import { guardarLocal, h, leerLocal, limpiar, ui } from "./dom";
 import { ayudaControles } from "./ayuda";
+import { crearCuarto } from "./cuarto";
 
 type AlEmpezar = (room: SalaJuego) => void;
 
@@ -124,69 +125,74 @@ function mostrarLobby(room: SalaLobby, alEmpezar: AlEmpezar): void {
   limpiar();
   let salir = false;
   const err = h("div", { class: "error" });
-  const codigoEl = h("span", { class: "titulo" }, "····");
+  const codigoEl = h("span", { class: "lobby-codigo" }, "····");
+  const cuarto = crearCuarto(room);
   const copiar = h(
     "button",
     {
-      class: "gris",
+      class: "menu-action lobby-copiar",
       onclick: async () => {
         try {
           await navigator.clipboard.writeText(room.state.codigo);
-          copiar.textContent = "¡Copiado!";
+          copiar.textContent = "COPIADO";
         } catch {
           copiar.textContent = room.state.codigo;
         }
       },
     },
-    "Copiar",
+    "COPIAR",
   );
   const tarjetas = new Map<AlienKind, HTMLElement>();
-  const grid = h("div", { class: "aliens" });
+  const grid = h("div", { class: "lobby-opciones" });
   for (const k of ALIEN_KINDS) {
     const def = ALIENS[k];
     const quien = h("div", { class: "quien" });
     const card = h(
       "div",
-      { class: "alien", onclick: () => room.send("elegir", { alien: k }) },
+      { class: "opcion", onclick: () => room.send("elegir", { alien: k }) },
       h("img", { src: `assets/personajes/retrato_${k}.png`, alt: def.nombre }),
-      h("h3", { style: `color:${def.colorCss}` }, def.nombre),
-      h("p", {}, def.descripcion),
-      quien,
+      h("div", { class: "opcion-texto" }, h("h3", { style: `color:${def.colorCss}` }, def.nombre), h("p", {}, def.descripcion), quien),
     );
     tarjetas.set(k, card);
     grid.append(card);
   }
   const chips = h("div", { class: "jugadores" });
-  const listo = h("button", { onclick: () => room.send("listo", { ready: !(room.state.jugadores.get(room.sessionId)?.listo ?? false) }) }, "¡Listo!");
+  const listo = h("button", { class: "menu-action", onclick: () => room.send("listo", { ready: !(room.state.jugadores.get(room.sessionId)?.listo ?? false) }) }, "LISTO");
   const salirBtn = h(
     "button",
     {
-      class: "gris",
+      class: "menu-action menu-back",
       onclick: () => {
         salir = true;
+        cuarto.destroy();
         void room.leave(true);
         mostrarMenu(alEmpezar);
       },
     },
-    "Salir",
+    "SALIR",
   );
-  const estado = h("p", { class: "ayuda", style: "text-align:center" });
+  const estado = h("p", { class: "lobby-estado" });
   const cuenta = h("div", { class: "cuenta titulo", style: "display:none" });
 
-  const pantalla = conPortada(
+  const pantalla = h(
+    "div",
+    { class: "pantalla menu-screen lobby-screen" },
     h(
-      "div",
-      { class: "pantalla" },
+      "main",
+      { class: "lobby-layout" },
       h(
-        "div",
-        { class: "caja lobby" },
-        h("div", { class: "codigo" }, h("span", { class: "ayuda" }, "CÓDIGO DE SALA"), codigoEl, copiar),
+        "section",
+        { class: "lobby-izq" },
+        h("img", { class: "lobby-logo", src: "assets/logo.png", alt: "DAWG" }),
+        h("div", { class: "lobby-codigo-fila" }, h("span", { class: "lobby-etiqueta" }, "CÓDIGO DE SALA"), codigoEl, copiar),
+        h("h2", { class: "lobby-titulo" }, "ELIGE TU ALIEN"),
         grid,
         chips,
         estado,
-        h("div", { class: "fila", style: "max-width:420px;margin:0 auto" }, salirBtn, listo),
+        h("div", { class: "menu-panel-actions" }, salirBtn, listo),
         err,
       ),
+      h("section", { class: "lobby-der" }, cuarto.el, h("p", { class: "lobby-ayuda" }, "Mueve a tu alien por el cuarto con W A S D o las flechas.")),
     ),
   );
   ui().append(pantalla, cuenta);
@@ -210,7 +216,7 @@ function mostrarLobby(room: SalaLobby, alEmpezar: AlEmpezar): void {
       chips.append(h("span", { class: `chip ${p.listo ? "listo" : ""}` }, `${p.nombre}${id === room.sessionId ? " (tú)" : ""}${p.anfitrion ? " ★" : ""}`));
     });
     for (let i = st.jugadores.size; i < st.necesarios; i++) chips.append(h("span", { class: "chip", style: "opacity:.5" }, "Esperando…"));
-    listo.textContent = yo?.listo ? "Cancelar" : "¡Listo!";
+    listo.textContent = yo?.listo ? "CANCELAR" : "LISTO";
     listo.disabled = !yo?.alien;
     const faltan = st.necesarios - st.jugadores.size;
     estado.textContent =
@@ -229,6 +235,7 @@ function mostrarLobby(room: SalaLobby, alEmpezar: AlEmpezar): void {
     try {
       const juego = await cliente.consumeSeatReservation<GameStateS>(reserva);
       salir = true;
+      cuarto.destroy();
       guardarReconexion(juego);
       void room.leave(true);
       alEmpezar(juego);
