@@ -1,7 +1,7 @@
 // Sala de espera: código de 4 letras, cada jugador elige un alien distinto y marca "listo".
 // Con todos listos se crea la partida y se reserva un asiento para cada uno.
 import { Room, matchMaker, type Client } from "@colyseus/core";
-import { ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, isAlienKind, type PickMsg, type ReadyMsg } from "@dawg/shared";
+import { LOBBY_BOUNDS, ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, isAlienKind, type LobbyMoveMsg, type PickMsg, type ReadyMsg } from "@dawg/shared";
 import { randomUUID } from "node:crypto";
 import { LobbyPlayer, LobbyState } from "../schema/LobbyState";
 import { jugadoresNecesarios } from "../config";
@@ -37,6 +37,14 @@ export class LobbyRoom extends Room<LobbyState> {
       this.revisar();
     });
 
+    this.onMessage("mover", (client, msg: LobbyMoveMsg) => {
+      const p = this.state.jugadores.get(client.sessionId);
+      if (!p || !p.alien || this.state.estado !== "esperando") return;
+      if (!Number.isFinite(msg?.x) || !Number.isFinite(msg?.y)) return;
+      p.x = Math.min(LOBBY_BOUNDS.maxX, Math.max(LOBBY_BOUNDS.minX, msg.x));
+      p.y = Math.min(LOBBY_BOUNDS.maxY, Math.max(LOBBY_BOUNDS.minY, msg.y));
+    });
+
     this.onMessage("nombre", (client, nombre: string) => {
       const p = this.state.jugadores.get(client.sessionId);
       if (p) p.nombre = limpiarNombre(nombre);
@@ -47,6 +55,8 @@ export class LobbyRoom extends Room<LobbyState> {
     const p = new LobbyPlayer();
     p.nombre = limpiarNombre(options?.nombre);
     p.anfitrion = this.state.jugadores.size === 0;
+    p.x = 0.3 + 0.2 * this.state.jugadores.size;
+    p.y = 0.7;
     this.state.jugadores.set(client.sessionId, p);
   }
 

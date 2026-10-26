@@ -44,6 +44,7 @@ var PROP_RADIUS = {
 var BOTIQUIN_CURA = 45;
 var PING_TYPES = ["ayuda", "aqui", "defiendan", "voy"];
 var ROOM_CODE_LENGTH = 4;
+var LOBBY_BOUNDS = { minX: 0.12, maxX: 0.88, minY: 0.42, maxY: 0.84 };
 var ROOM_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ";
 
 // ../shared/src/aliens.ts
@@ -3181,6 +3182,8 @@ var LobbyPlayer = class extends Schema2 {
     this.alien = "";
     this.listo = false;
     this.anfitrion = false;
+    this.x = 0.5;
+    this.y = 0.7;
   }
 };
 __decorateClass([
@@ -3195,6 +3198,12 @@ __decorateClass([
 __decorateClass([
   type2("boolean")
 ], LobbyPlayer.prototype, "anfitrion", 2);
+__decorateClass([
+  type2("float32")
+], LobbyPlayer.prototype, "x", 2);
+__decorateClass([
+  type2("float32")
+], LobbyPlayer.prototype, "y", 2);
 var LobbyState = class extends Schema2 {
   constructor() {
     super(...arguments);
@@ -3251,6 +3260,13 @@ var LobbyRoom = class extends Room {
       p.listo = Boolean(msg?.ready) && p.alien !== "";
       this.revisar();
     });
+    this.onMessage("mover", (client, msg) => {
+      const p = this.state.jugadores.get(client.sessionId);
+      if (!p || !p.alien || this.state.estado !== "esperando") return;
+      if (!Number.isFinite(msg?.x) || !Number.isFinite(msg?.y)) return;
+      p.x = Math.min(LOBBY_BOUNDS.maxX, Math.max(LOBBY_BOUNDS.minX, msg.x));
+      p.y = Math.min(LOBBY_BOUNDS.maxY, Math.max(LOBBY_BOUNDS.minY, msg.y));
+    });
     this.onMessage("nombre", (client, nombre) => {
       const p = this.state.jugadores.get(client.sessionId);
       if (p) p.nombre = limpiarNombre(nombre);
@@ -3260,6 +3276,8 @@ var LobbyRoom = class extends Room {
     const p = new LobbyPlayer();
     p.nombre = limpiarNombre(options?.nombre);
     p.anfitrion = this.state.jugadores.size === 0;
+    p.x = 0.3 + 0.2 * this.state.jugadores.size;
+    p.y = 0.7;
     this.state.jugadores.set(client.sessionId, p);
   }
   onLeave(client) {
