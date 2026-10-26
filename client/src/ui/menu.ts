@@ -156,6 +156,7 @@ function mostrarLobby(room: SalaLobby, alEmpezar: AlEmpezar): void {
     tarjetas.set(k, card);
     grid.append(card);
   }
+  const skinBtn = h("button", { class: "menu-action menu-skin", onclick: () => room.send("skin", {}) }, "SKIN: ORIGINAL");
   const chips = h("div", { class: "jugadores" });
   const listo = h("button", { class: "menu-action", onclick: () => room.send("listo", { ready: !(room.state.jugadores.get(room.sessionId)?.listo ?? false) }) }, "LISTO");
   const salirBtn = h(
@@ -187,6 +188,7 @@ function mostrarLobby(room: SalaLobby, alEmpezar: AlEmpezar): void {
         h("div", { class: "lobby-codigo-fila" }, h("span", { class: "lobby-etiqueta" }, "CÓDIGO DE SALA"), codigoEl, copiar),
         h("h2", { class: "lobby-titulo" }, "ELIGE TU ALIEN"),
         grid,
+        skinBtn,
         chips,
         estado,
         h("div", { class: "menu-panel-actions" }, salirBtn, listo),
@@ -218,6 +220,8 @@ function mostrarLobby(room: SalaLobby, alEmpezar: AlEmpezar): void {
     for (let i = st.jugadores.size; i < st.necesarios; i++) chips.append(h("span", { class: "chip", style: "opacity:.5" }, "Esperando…"));
     listo.textContent = yo?.listo ? "CANCELAR" : "LISTO";
     listo.disabled = !yo?.alien;
+    skinBtn.disabled = !yo?.alien;
+    skinBtn.textContent = yo?.skin ? "SKIN: ALTERNATIVA" : "SKIN: ORIGINAL";
     const faltan = st.necesarios - st.jugadores.size;
     estado.textContent =
       faltan > 0

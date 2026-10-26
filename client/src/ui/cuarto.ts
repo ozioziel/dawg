@@ -59,11 +59,11 @@ export function crearCuarto(room: SalaLobby): { el: HTMLElement; destroy: () => 
     window.removeEventListener("blur", onBlur);
   };
 
-  const crearFigura = (kind: string, nombre: string, propio: boolean, x: number, y: number): Figura => {
+  const crearFigura = (kind: string, alien: string, nombre: string, propio: boolean, x: number, y: number): Figura => {
     const cuerpo = h("div", { class: "cuarto-cuerpo" });
     cuerpo.style.backgroundImage = `url(assets/personajes/${kind}.png)`;
     const etiqueta = h("span", { class: `cuarto-nombre ${propio ? "propio" : ""}` }, nombre);
-    if (isAlienKind(kind)) etiqueta.style.color = ALIENS[kind].colorCss;
+    if (isAlienKind(alien)) etiqueta.style.color = ALIENS[alien].colorCss;
     const fig = h("div", { class: "cuarto-figura" }, etiqueta, cuerpo);
     capa.append(fig);
     return { el: fig, cuerpo, etiqueta, kind, x, y, dir: "down", izq: false, mov: false };
@@ -100,13 +100,14 @@ export function crearCuarto(room: SalaLobby): { el: HTMLElement; destroy: () => 
       vistos.add(id);
       const propio = id === room.sessionId;
       let f = figuras.get(id);
-      if (f && f.kind !== p.alien) {
+      const sprite = p.skin ? `skin${p.skin}${p.alien}` : p.alien;
+      if (f && f.kind !== sprite) {
         f.el.remove();
         figuras.delete(id);
         f = undefined;
       }
       if (!f) {
-        f = crearFigura(p.alien, propio ? `${p.nombre} (tú)` : p.nombre, propio, p.x, p.y);
+        f = crearFigura(sprite, p.alien, propio ? `${p.nombre} (tú)` : p.nombre, propio, p.x, p.y);
         figuras.set(id, f);
       }
       f.etiqueta.textContent = propio ? `${p.nombre} (tú)` : p.nombre;

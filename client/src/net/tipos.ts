@@ -123,6 +123,7 @@ export interface GameStateS {
 export interface LobbyPlayerS {
   nombre: string;
   alien: string;
+  skin: number;
   listo: boolean;
   anfitrion: boolean;
   x: number;
