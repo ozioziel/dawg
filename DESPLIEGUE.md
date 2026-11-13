@@ -98,7 +98,7 @@ En `nano`, cambia `203-0-113-25` por tu IP con guiones en las dos líneas, y dej
 ```
 DOMINIO=203-0-113-25.sslip.io
 ORIGENES_PERMITIDOS=https://html-classic.itch.zone,https://html.itch.zone,https://203-0-113-25.sslip.io
-JUGADORES_MINIMOS=3
+JUGADORES_MINIMOS=1
 ```
 
 Guarda con `Ctrl+O` y `Enter`, y sal con `Ctrl+X`.
@@ -202,9 +202,9 @@ Si cambiaste algo del juego, vuelve a generar también `dawg-itch.zip` (paso 6) 
 | Error de certificado / "no es seguro" | Mira `docker compose logs caddy`. Let's Encrypt limita cuántos certificados se emiten por semana para sslip.io; Caddy reintenta solo (también con ZeroSSL). Espera unos minutos. Si sigue fallando, usa un subdominio gratis de [DuckDNS](https://www.duckdns.org) y ponlo en `DOMINIO`. |
 | En itch.io dice "No se pudo conectar con el servidor" | El zip se compiló sin `VITE_SERVER_URL` o con otra IP: repite el paso 6. Comprueba que `ORIGENES_PERMITIDOS` incluye `https://html-classic.itch.zone`. |
 | `bind: address already in use` al levantar | Algo ya usa el puerto 80/443: usa la **opción B**. |
-| La partida no empieza | Hacen falta **3 jugadores**, cada uno con un alien distinto y en "¡Listo!". |
-| Un jugador se queda cargando | La partida espera hasta 45 s a que todos carguen y luego empieza igual. |
-| Se cortó la conexión de alguien | Tiene 60 s para volver (recargar la página reconecta solo). Si no vuelve, su alien cae y deja su alma. |
+| La partida no empieza | Cada jugador (de 1 a 5) necesita un alien distinto y estar en "¡Listo!"; el anfitrión pulsa **EMPEZAR**. |
+| Un jugador se queda cargando | La partida espera hasta 45 s a que todos carguen y luego empieza con los que ya cargaron; quien sigue cargando no recibe daño hasta que entra. |
+| Se cortó la conexión de alguien | Tiene 60 s para volver (recargar la página reconecta solo) y mientras tanto no recibe daño; si nadie queda conectado (partida en solitario), la partida se congela. Si no vuelve, su alien cae y deja su alma. |
 
 ---
 
@@ -214,7 +214,7 @@ Si cambiaste algo del juego, vuelve a generar también `dawg-itch.zip` (paso 6) 
 |---|---|
 | `DOMINIO` | Dirección sslip.io (o DuckDNS) para el HTTPS de Caddy. |
 | `ORIGENES_PERMITIDOS` | Webs que pueden conectarse al juego, separadas por comas. Vacío = cualquiera. |
-| `JUGADORES_MINIMOS` | Siempre `3` en el VPS. En tu PC se puede poner `1` para probar solo. |
+| `JUGADORES_MINIMOS` | `1` (se puede jugar en solitario o con hasta 5). Ponlo más alto solo si quieres obligar a esperar a más gente. |
 
 Hay otras dos variables que **solo** sirven para pruebas en tu PC. **Nunca** las actives en el VPS:
 

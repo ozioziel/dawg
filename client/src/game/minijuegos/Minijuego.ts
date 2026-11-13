@@ -2,7 +2,7 @@
 // Reglas comunes: se permiten ERRORES_PERMITIDOS errores; con uno más, falla.
 // Recibir un golpe cuenta como un error (como mucho uno cada 1,5 s).
 // Duran de 30 a 60 s: cada acierto rápido resta 5 s (lo aplica el servidor).
-import { ERRORES_PERMITIDOS, MINIGAME_BONUS, PUZZLES, type PuzzleDef } from "@dawg/shared";
+import { ERRORES_PERMITIDOS, MINIGAME_BONUS, retoDef, type RetoDef } from "@dawg/shared";
 import Phaser from "phaser";
 import type { PuzzleS } from "../../net/tipos";
 import { TEXTO, TITULO, ctx, type Ctx } from "../contexto";
@@ -11,7 +11,7 @@ import { sfx } from "../sonido";
 export abstract class Minijuego extends Phaser.Scene {
   c!: Ctx;
   id = "";
-  def!: PuzzleDef;
+  def!: RetoDef;
   /** Tamaño lógico del panel (se escala para caber en pantalla). */
   protected pw = 680;
   protected ph = 440;
@@ -37,7 +37,8 @@ export abstract class Minijuego extends Phaser.Scene {
 
   init(data: { id: string }): void {
     this.id = data.id;
-    this.def = PUZZLES[data.id];
+    const r = ctx(this).room.state.retos.get(data.id);
+    this.def = retoDef(r?.def ?? "") ?? { id: data.id, tipo: "extra", nombre: "Consola", requiere: [], sectores: [1], patron: "", instrucciones: "" };
     this.terminado = false;
     this.errores = 0;
     this.hpPrev = -1;
@@ -92,7 +93,7 @@ export abstract class Minijuego extends Phaser.Scene {
   }
 
   protected get pz(): PuzzleS | undefined {
-    return this.c.room.state.puzzles.get(this.id);
+    return this.c.room.state.retos.get(this.id);
   }
 
   /** 0..1 del tiempo transcurrido del puzzle. */
@@ -102,9 +103,9 @@ export abstract class Minijuego extends Phaser.Scene {
     return Math.max(0, Math.min(1, 1 - pz.tiempo / pz.total));
   }
 
-  /** Versión corta (estaciones del núcleo). */
+  /** Versión corta (ya no hay estaciones del núcleo con minijuego). */
   protected get corto(): boolean {
-    return this.def.tipo === "nucleo";
+    return false;
   }
 
   /** Vida perdida desde el último cuadro. */

@@ -1,8 +1,11 @@
-// Director de oleadas (estilo Left 4 Dead): encuentros por sala, oleadas durante los
-// minijuegos, castigo al fallar y patrullas para mantener la presión.
+// Director de amenazas (estilo Left 4 Dead): encuentros al entrar en cada sala, oleadas mientras
+// se resuelve un reto, castigo al fallar, patrullas y robots cazadores que aparecen fuera de la vista.
+// Se adapta al tamaño del equipo (cantidad, vida y ritmo) y se endurece sector a sector.
 // La dificultad NO baja aunque muera un alien.
-import { MAX_ENEMIES_ALIVE, PUZZLES, dist, type EnemyType } from "@dawg/shared";
+import { ESCALA_EQUIPO, MAX_ENEMIGOS_POR_EQUIPO, dist, rangoDe, type EnemyType } from "@dawg/shared";
+import type { Unit } from "../schema/GameState";
 import type { Partida } from "./Partida";
+import { soltarAgarre } from "./enemigos";
 
 type Oleada = EnemyType[];
 
@@ -18,63 +21,46 @@ const ENCUENTROS: Record<string, Oleada> = {
   r5: ["francotirador", "francotirador", "fusilero"],
   r6: ["lanzallamas", "lanzarredes", "fusilero"],
   r7: ["escudo", "escudo", "medico"],
+  hub2: ["fusilero", "robot", "medico", "fusilero"],
+  s2a: ["bioquimico", "fusilero", "perro"],
+  s2b: ["criogenista", "robot", "fusilero"],
+  s2c: ["laser", "fusilero", "quimico"],
+  s2d: ["escudo", "medico", "fusilero"],
+  s2e: ["ingeniero", "laser", "fusilero"],
+  arena2: ["robot", "fusilero"],
+  hangar: ["robot", "fusilero", "fusilero", "laser"],
 };
 
-/** Oleadas que llegan mientras se resuelve cada puzzle (se repiten en ciclo). */
-const OLEADAS: Record<string, Oleada[]> = {
-  p1: [
+/** Oleadas mientras se resuelve un reto, por sector (se repiten en ciclo). */
+const OLEADAS: Record<number, Oleada[]> = {
+  1: [
     ["fusilero", "fusilero", "perro"],
     ["fusilero", "lanzarredes", "criogenista"],
     ["perro", "perro", "fusilero", "quimico"],
     ["escudo", "medico", "fusilero"],
     ["lanzarredes", "lanzallamas", "fusilero"],
+    ["francotirador", "fusilero", "bioquimico"],
   ],
-  p2: [
-    ["fusilero", "fusilero"],
-    ["perro", "ingeniero", "fusilero"],
-    ["quimico", "fusilero", "fusilero"],
-    ["escudo", "medico", "fusilero"],
-    ["perro", "perro", "francotirador"],
+  2: [
+    ["fusilero", "robot", "perro"],
+    ["laser", "fusilero", "criogenista"],
+    ["escudo", "medico", "robot"],
+    ["lanzallamas", "lanzarredes", "fusilero"],
+    ["bioquimico", "quimico", "fusilero", "fusilero"],
+    ["robot", "laser", "medico"],
   ],
-  p3: [
-    ["lanzarredes", "fusilero", "fusilero"],
-    ["bioquimico", "fusilero", "perro"],
-    ["lanzallamas", "lanzarredes"],
-    ["criogenista", "francotirador", "fusilero"],
-    ["escudo", "medico", "quimico"],
-  ],
-  p4: [
-    ["fusilero", "fusilero", "perro"],
-    ["ingeniero", "perro", "fusilero"],
-    ["escudo", "medico", "criogenista"],
-    ["lanzarredes", "lanzallamas", "fusilero"],
-  ],
-  p5: [
-    ["fusilero", "fusilero", "criogenista"],
-    ["francotirador", "fusilero", "quimico"],
-    ["escudo", "medico", "bioquimico"],
-    ["lanzallamas", "lanzarredes", "perro"],
-  ],
-  p6: [
-    ["fusilero", "fusilero", "perro"],
-    ["lanzarredes", "lanzallamas"],
-    ["criogenista", "francotirador", "fusilero"],
-    ["escudo", "medico", "quimico", "fusilero"],
-  ],
-  nucleo: [
-    ["fusilero", "fusilero", "perro"],
-    ["criogenista", "quimico", "fusilero"],
-    ["escudo", "medico", "bioquimico"],
-    ["lanzarredes", "lanzallamas", "francotirador"],
+  3: [
+    ["robot", "fusilero", "laser"],
+    ["escudo", "escudo", "medico", "fusilero"],
+    ["robot", "robot", "criogenista"],
+    ["laser", "lanzallamas", "fusilero", "perro"],
+    ["oficial", "fusilero", "fusilero"],
   ],
 };
-
-const SALA_DE: Record<string, string> = { p1: "r1", p2: "r2", p3: "r3", p4: "r4", p5: "r5", p6: "r6", n1: "r7", n2: "r7", n3: "r7" };
 
 interface Activa {
   timer: number;
   idx: number;
-  clave: string;
   sala: string;
   intervalo: number;
 }
@@ -86,8 +72,13 @@ export class Director {
   private tutorialT = 3;
   private roomCheck = 0;
   private patrulla = 30;
+  private cazadorT = 80;
 
   constructor(private g: Partida) {}
+
+  get apagado(): boolean {
+    return process.env.DIRECTOR_APAGADO === "1";
+  }
 
   reset(): void {
     this.visitadas.clear();
@@ -95,36 +86,49 @@ export class Director {
     this.tutorial = 0;
     this.tutorialT = 3;
     this.patrulla = 30;
+    this.cazadorT = 80;
   }
 
-  start(): void {
-    this.visitadas.add("r0");
+  /** Marca como visitadas las salas de sectores anteriores (reintento desde un punto de control). */
+  saltarHasta(sector: number): void {
+    for (const r of this.g.world.rooms) {
+      const s = Number(this.g.world.findOne("room", r.id)?.props.sector ?? 1);
+      if (s < sector) this.visitadas.add(r.id);
+    }
+    if (sector > 1) this.tutorial = 3;
   }
 
   update(dt: number): void {
-    // Solo para pruebas locales: DIRECTOR_APAGADO=1 quita los enemigos.
-    if (process.env.DIRECTOR_APAGADO === "1") {
-      this.g.flags.add("tutorial");
-      return;
-    }
-    this.updateTutorial(dt);
     this.roomCheck -= dt;
     if (this.roomCheck <= 0) {
       this.roomCheck = 0.5;
       this.checkRooms();
     }
+    if (this.apagado) {
+      this.g.flags.add("tutorial");
+      return;
+    }
+    this.updateTutorial(dt);
     for (const [id, a] of this.activas) {
       a.timer -= dt;
       if (a.timer <= 0) {
         a.timer = a.intervalo;
-        const lista = OLEADAS[a.clave];
-        this.spawnWave(lista[a.idx++ % lista.length], a.sala, id);
+        const lista = OLEADAS[this.g.state.sector] ?? OLEADAS[1];
+        this.spawnWave(lista[a.idx++ % lista.length], a.sala, "reto-" + id);
       }
     }
     this.patrulla -= dt;
     if (this.patrulla <= 0) {
-      this.patrulla = 24;
+      this.patrulla = 24 * ESCALA_EQUIPO.intervalo[this.g.k];
       this.patrol();
+    }
+    // Robots cazadores desde el sector II.
+    if (this.g.state.sector >= 2) {
+      this.cazadorT -= dt;
+      if (this.cazadorT <= 0) {
+        this.cazadorT = (this.g.state.sector === 3 ? 55 : 85) * ESCALA_EQUIPO.intervalo[this.g.k];
+        this.spawnCazador(1);
+      }
     }
   }
 
@@ -135,7 +139,7 @@ export class Director {
       this.tutorialT -= dt;
       if (this.tutorialT <= 0) {
         this.tutorial = 1;
-        this.g.aviso("¡Guardias! WASD para moverte, ratón para apuntar y disparar, ESPACIO para tu habilidad.", "peligro");
+        this.g.aviso("¡Guardias! Muévete, apunta y ataca. Usa tu habilidad (ESPACIO / clic derecho) y tu definitiva (R) cuando esté cargada.", "peligro");
         this.spawnWave(["fusilero", "fusilero", "perro"], "r0", "tutorial");
       }
       return;
@@ -156,7 +160,7 @@ export class Director {
     let n = 0;
     this.g.brains.forEach((b, id) => {
       const u = this.g.state.unidades.get(id);
-      if (b.tag === tag && u && u.team === "humanos" && u.t !== "torreta" && u.t !== "sensor") n++;
+      if (b.tag === tag && u && u.team === "humanos" && rangoDe(u.t) !== "dispositivo") n++;
     });
     return n;
   }
@@ -168,95 +172,142 @@ export class Director {
       const room = this.g.world.roomAt(p.x, p.y);
       if (!room || this.visitadas.has(room.id)) return;
       this.visitadas.add(room.id);
-      if (room.id === "r7") this.spawnBoss();
+      this.g.sectores.onSalaVisitada(room.id);
       const enc = ENCUENTROS[room.id];
-      if (enc) this.spawnWave(enc, room.id, "sala-" + room.id);
+      if (enc && !(room.id.startsWith("s2") && this.g.sectores.salaSellada(room.id))) this.spawnWave(enc, room.id, "sala-" + room.id);
     });
   }
 
-  private spawnBoss(): void {
-    const o = this.g.world.findOne("boss_spawn");
-    if (!o || this.g.state.jefe) return;
-    this.g.spawnUnit("jefe", o.x, o.y, "humanos", "jefe");
-    this.g.aviso("¡El JEFE DE LABORATORIO! Activen las 3 estaciones para romper sus depósitos.", "peligro");
+  // ---------------------------------------------------------------- retos
+  onRetoStart(slot: string, intervalo = 16): void {
+    if (this.activas.has(slot)) return;
+    const sala = this.salaDeSlot(slot);
+    this.activas.set(slot, { timer: 4, idx: Math.floor(Math.random() * 4), sala, intervalo: intervalo * ESCALA_EQUIPO.intervalo[this.g.k] });
   }
 
-  // ---------------------------------------------------------------- puzzles
-  onPuzzleStart(id: string): void {
-    const def = PUZZLES[id];
-    const clave = def.tipo === "nucleo" ? "nucleo" : id;
-    if (def.tipo === "nucleo" && [...this.activas.values()].some((a) => a.clave === "nucleo")) return;
-    const intervalo = def.tipo === "individual" ? 15 : def.tipo === "duo" ? 18 : 16;
-    this.activas.set(def.tipo === "nucleo" ? "nucleo" : id, { timer: 4, idx: 0, clave, sala: SALA_DE[id], intervalo });
+  onRetoEnd(slot: string): void {
+    this.activas.delete(slot);
   }
 
-  onPuzzleEnd(id: string): void {
-    const def = PUZZLES[id];
-    if (def.tipo === "nucleo") {
-      const otras = ["n1", "n2", "n3"].some((n) => this.g.state.puzzles.get(n)?.estado === "activo");
-      if (!otras) this.activas.delete("nucleo");
-    } else this.activas.delete(id);
+  onRetoFail(slot: string): void {
+    const lista = OLEADAS[this.g.state.sector] ?? OLEADAS[1];
+    const castigo = [...lista[Math.floor(Math.random() * lista.length)], ...(this.g.k >= 3 ? lista[Math.floor(Math.random() * lista.length)] : [])];
+    this.spawnWave(castigo, this.salaDeSlot(slot), "castigo");
   }
 
-  onPuzzleFail(id: string): void {
-    const def = PUZZLES[id];
-    const lista = OLEADAS[def.tipo === "nucleo" ? "nucleo" : id];
-    const castigo = [...lista[Math.floor(Math.random() * lista.length)], ...lista[Math.floor(Math.random() * lista.length)]];
-    this.spawnWave(castigo, SALA_DE[id], "castigo");
-    this.onPuzzleEnd(id);
+  salaDeSlot(slot: string): string {
+    if (slot.startsWith("s3")) return "hangar";
+    return slot;
   }
 
   // ---------------------------------------------------------------- patrullas
   private patrol(): void {
-    if (this.countEnemies() >= 6) return;
+    if (this.countEnemies() >= this.max() / 3) return;
     const vivos: { x: number; y: number }[] = [];
     this.g.state.jugadores.forEach((p) => p.vivo && vivos.push({ x: p.x, y: p.y }));
     if (!vivos.length) return;
     const p = vivos[Math.floor(Math.random() * vivos.length)];
     const room = this.g.world.roomAt(p.x, p.y);
-    if (!room || room.id === "r0" || room.id === "salida") return;
-    const grupos: Oleada[] = [
-      ["fusilero", "perro"],
-      ["fusilero", "quimico"],
-      ["fusilero", "fusilero", "criogenista"],
-      ["perro", "perro"],
-    ];
+    if (!room || ["r0", "e2", "e3", "exterior"].includes(room.id)) return;
+    const s = this.g.state.sector;
+    const grupos: Oleada[] =
+      s === 1
+        ? [["fusilero", "perro"], ["fusilero", "quimico"], ["fusilero", "fusilero", "criogenista"], ["perro", "perro"]]
+        : s === 2
+          ? [["fusilero", "robot"], ["laser", "fusilero"], ["perro", "perro", "fusilero"], ["bioquimico", "robot"]]
+          : [["robot", "fusilero"], ["laser", "escudo"], ["oficial", "fusilero"], ["robot", "perro", "perro"]];
     this.spawnWave(grupos[Math.floor(Math.random() * grupos.length)], room.id, "patrulla");
+  }
+
+  /** Robot cazador: aparece en un punto que nadie está viendo y corre a por un alien. */
+  spawnCazador(n: number): void {
+    if (this.apagado) return;
+    const vivos: { x: number; y: number }[] = [];
+    this.g.state.jugadores.forEach((p) => p.vivo && vivos.push({ x: p.x, y: p.y }));
+    if (!vivos.length) return;
+    const puntos = this.g.world
+      .find("spawn")
+      .filter((o) => vivos.some((p) => dist(p.x, p.y, o.x, o.y) < 1300) && vivos.every((p) => dist(p.x, p.y, o.x, o.y) > 450 && !this.g.world.lineOfSight(p.x, p.y, o.x, o.y)));
+    for (let i = 0; i < n && puntos.length; i++) {
+      const o = puntos[Math.floor(Math.random() * puntos.length)];
+      this.g.spawnUnit("cazador", o.x, o.y, "humanos", "cazador");
+      this.g.fx("alarma", o.x, o.y);
+    }
+    if (puntos.length) this.g.aviso("Se oye algo metálico corriendo por los conductos…", "peligro");
+  }
+
+  soltarAgarre(pid: string): void {
+    this.g.brains.forEach((b, uid) => {
+      if (b.agarre !== pid) return;
+      const u = this.g.state.unidades.get(uid);
+      if (u) soltarAgarre(this.g, uid, u, b);
+      else b.agarre = "";
+    });
+  }
+
+  onUnidadMuere(uid: string, u: Unit): void {
+    // Si el cazador muere agarrando a alguien, lo suelta.
+    if (u.t === "cazador") {
+      this.g.state.jugadores.forEach((p) => {
+        if (p.estado === "agarrado") {
+          let otro = false;
+          this.g.brains.forEach((b, oid) => oid !== uid && b.agarre && this.g.state.jugadores.get(b.agarre) === p && (otro = true));
+          if (!otro) {
+            p.estado = "ok";
+            p.estadoT = 0;
+          }
+        }
+      });
+    }
   }
 
   // ---------------------------------------------------------------- aparición
   countEnemies(): number {
     let n = 0;
     this.g.state.unidades.forEach((u) => {
-      if (u.team === "humanos" && u.t !== "torreta" && u.t !== "sensor") n++;
+      if (u.team === "humanos" && rangoDe(u.t) !== "dispositivo" && rangoDe(u.t) !== "npc") n++;
     });
     return n;
   }
 
+  max(): number {
+    return MAX_ENEMIGOS_POR_EQUIPO[this.g.k];
+  }
+
+  /** Ajusta una oleada al tamaño del equipo. */
+  escalar(tipos: Oleada): Oleada {
+    const f = ESCALA_EQUIPO.cantidad[this.g.k];
+    const n = Math.max(1, Math.round(tipos.length * f));
+    const out = tipos.slice(0, Math.min(n, tipos.length));
+    for (let i = tipos.length; i < n; i++) out.push(tipos[i % tipos.length]);
+    return out;
+  }
+
   spawnWave(tipos: Oleada, sala: string, tag: string): void {
-    if (process.env.DIRECTOR_APAGADO === "1") return;
+    if (this.apagado) return;
     let puntos = this.g.world.find("spawn").filter((o) => o.name === sala);
     if (!puntos.length) return;
     const jugadores: { x: number; y: number }[] = [];
     this.g.state.jugadores.forEach((p) => p.vivo && jugadores.push({ x: p.x, y: p.y }));
-    // Preferir puntos que no estén encima de los jugadores.
     const lejos = puntos.filter((o) => jugadores.every((p) => dist(p.x, p.y, o.x, o.y) > 380));
     if (lejos.length) puntos = lejos;
-    tipos.forEach((t, i) => {
-      if (this.countEnemies() >= MAX_ENEMIES_ALIVE) return;
+    this.escalar(tipos).forEach((t, i) => {
+      if (this.countEnemies() >= this.max()) return;
       const o = puntos[i % puntos.length];
       const x = o.x + (Math.random() - 0.5) * 50;
       const y = o.y + (Math.random() - 0.5) * 50;
-      this.g.spawnUnit(t, this.g.world.blocksMoveAt(x, y) ? o.x : x, this.g.world.blocksMoveAt(x, y) ? o.y : y, "humanos", tag);
+      const ok = !this.g.world.blocksMoveAt(x, y);
+      this.g.spawnUnit(t, ok ? x : o.x, ok ? y : o.y, "humanos", tag);
     });
   }
 
   spawnNear(tipos: Oleada, x: number, y: number, tag: string): void {
-    tipos.forEach((t, i) => {
-      if (this.countEnemies() >= MAX_ENEMIES_ALIVE) return;
-      const a = (i / tipos.length) * Math.PI * 2 + Math.random();
-      const px = x + Math.cos(a) * 110;
-      const py = y + Math.sin(a) * 110;
+    if (this.apagado) return;
+    this.escalar(tipos).forEach((t, i, arr) => {
+      if (this.countEnemies() >= this.max()) return;
+      const a = (i / arr.length) * Math.PI * 2 + Math.random();
+      const px = x + Math.cos(a) * 130;
+      const py = y + Math.sin(a) * 130;
       if (!this.g.world.blocksMoveAt(px, py)) this.g.spawnUnit(t, px, py, "humanos", tag);
     });
   }

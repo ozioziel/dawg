@@ -2,7 +2,7 @@
   "name": "dawg",
   "version": "0.1.0",
   "private": true,
-  "description": "dawg — tres aliens escapan del Área 51. Juego web cooperativo top-down (demo Área 1).",
+  "description": "dawg — de uno a cinco aliens escapan del Área 51. Juego web cooperativo top-down (demo completa de tres sectores).",
   "type": "module",
   "workspaces": [
     "shared",
@@ -14,11 +14,12 @@
     "build": "npm run build -w server && npm run build -w client",
     "build:itch": "npm run build:itch -w client",
     "start": "npm start -w server",
-    "mapa": "node maps/generar-area1.mjs",
+    "mapa": "node maps/generar-mapa.mjs",
     "arte": "node .privado/recursos/arte-fuente/generar-arte.mjs",
     "typecheck": "tsc -p shared --noEmit && tsc -p server --noEmit && tsc -p client --noEmit",
     "prueba:bots": "node server/scripts/prueba-bots.mjs",
-    "paquete:vps": "node deploy/crear-paquete.mjs"
+    "paquete:vps": "node deploy/crear-paquete.mjs",
+    "test": "npm test -w server"
   },
   "devDependencies": {
     "@resvg/resvg-js": "2.6.2",

@@ -37,6 +37,9 @@ jobs:
       - name: Compilar servidor y cliente
         run: npm run build
 
+      - name: Pruebas automáticas (218 equipos, retos, recorridos, almas, combate)
+        run: npm test
+
       - name: Prueba con bots (3 jugadores, 20 s)
         env:
           JUGADORES_MINIMOS: "3"

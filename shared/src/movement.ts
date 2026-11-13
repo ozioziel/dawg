@@ -1,19 +1,21 @@
 // Paso de movimiento del jugador: idéntico en servidor y cliente (predicción).
-import { ALIENS, type AlienKind } from "./aliens";
 import { GHOST_SPEED, PLAYER_RADIUS, TILE } from "./constants";
 import { clamp, type Circle, type World } from "./world";
 
-export type PlayerStatus = "ok" | "congelado" | "red" | "aturdido";
+export type PlayerStatus = "ok" | "congelado" | "red" | "aturdido" | "agarrado";
 
 export interface MoverState {
   x: number;
   y: number;
-  kind: AlienKind;
+  /** Velocidad actual (la calcula el servidor con mejoras y efectos). */
+  speed: number;
   status: string;
   confused: number;
   ghost: boolean;
-  /** Bloqueado en una consola. */
+  /** Bloqueado en una consola o controlando a otro cuerpo. */
   locked: boolean;
+  /** Escarabajo bajo tierra: atraviesa contenedores y objetos. */
+  under?: boolean;
 }
 
 export function canMove(p: MoverState): boolean {
@@ -48,6 +50,5 @@ export function stepPlayer(
       y: clamp(p.y + iy * GHOST_SPEED * dt, TILE, (world.h - 1) * TILE),
     };
   }
-  const speed = ALIENS[p.kind].speed;
-  return world.moveCircle(p.x, p.y, ix * speed * dt, iy * speed * dt, PLAYER_RADIUS, extra);
+  return world.moveCircle(p.x, p.y, ix * p.speed * dt, iy * p.speed * dt, PLAYER_RADIUS, extra, p.under ? 2 : 1);
 }

@@ -48,7 +48,7 @@ export class MgValvulas extends Minijuego {
     this.cuentaGolpes = false;
     this.muestraErrores = false;
     this.pw = 640;
-    this.ph = 250;
+    this.ph = 300;
   }
 
   protected override colocar(): void {
@@ -68,6 +68,25 @@ export class MgValvulas extends Minijuego {
     this.cont.add([this.orden, this.accion, this.sub]);
     const kb = this.input.keyboard!;
     this.teclas = [kb.addKey("SPACE"), kb.addKey("F"), kb.addKey("J")];
+    this.tactiles = [];
+    // Botones en pantalla (táctil y ratón): se crean al conocer el modo (solo o dúo).
+  }
+
+  private tactiles: Phaser.GameObjects.Text[] = [];
+  private toques = new Set<number>();
+
+  private botones(solo: boolean): void {
+    if (this.tactiles.length) return;
+    const crear = (x: number, txt: string, k: number) => {
+      const b = this.add.text(x, this.ph - 56, txt, { ...TEXTO, fontSize: "22px", backgroundColor: "#1d3a4a", padding: { x: 18, y: 8 } }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+      b.on("pointerdown", () => this.toques.add(k));
+      this.cont.add(b);
+      this.tactiles.push(b);
+    };
+    if (solo) {
+      crear(this.pw / 2 - 120, "VÁLVULA A", 1);
+      crear(this.pw / 2 + 120, "VÁLVULA B", 2);
+    } else crear(this.pw / 2, "¡PULSAR!", 0);
   }
 
   private miCarril(): "A" | "B" {
@@ -97,8 +116,11 @@ export class MgValvulas extends Minijuego {
     // Pulsaciones
     if (ritmo && !this.terminado) {
       const usadas: [number, "A" | "B"][] = solo ? [[1, "A"], [2, "B"]] : [[0, this.miCarril()]];
+      this.botones(solo);
       for (const [k, carril] of usadas) {
-        if (!Phaser.Input.Keyboard.JustDown(this.teclas[k])) continue;
+        const toque = this.toques.has(k);
+        this.toques.delete(k);
+        if (!Phaser.Input.Keyboard.JustDown(this.teclas[k]) && !toque) continue;
         const n = actual >= 0 ? d.notas[actual] : undefined;
         const toca = n && (n.l === carril || n.l === "AB");
         if (toca && !this.pulsadas.has(`${actual}${carril}`)) {

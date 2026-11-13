@@ -1,5 +1,5 @@
 // Arranca Phaser con la partida ya conectada.
-import mapa from "../../../maps/area1.json";
+import mapa from "../../../maps/area51.json";
 import { World, type TiledMap } from "@dawg/shared";
 import Phaser from "phaser";
 import { cliente, borrarReconexion, guardarReconexion, type SalaJuego } from "../net/conexion";
@@ -12,8 +12,10 @@ import { Carga } from "./escenas/Carga";
 import { Hud } from "./escenas/Hud";
 import { Mundo } from "./escenas/Mundo";
 import { MgCara } from "./minijuegos/MgCara";
+import { MgCodigo } from "./minijuegos/MgCodigo";
 import { MgMemoria } from "./minijuegos/MgMemoria";
 import { MgRayos } from "./minijuegos/MgRayos";
+import { MgRitmo } from "./minijuegos/MgRitmo";
 import { MgTransmutacion } from "./minijuegos/MgTransmutacion";
 import { MgValvulas } from "./minijuegos/MgValvulas";
 
@@ -27,7 +29,8 @@ export function iniciarJuego(room: SalaJuego, volverAlMenu: (msg?: string) => vo
     room,
     chat,
     world: new World(mapa as unknown as TiledMap),
-    ui: { mapaGrande: false, minijuego: "", prompt: "", pings: [] },
+    ui: { mapaGrande: false, minijuego: "", prompt: "", pings: [], tactil: false, codigo: null },
+    tactil: { mx: 0, my: 0, aim: null, disparo: false, habilidad: "" },
     salir: (msg?: string) => {
       saliendo = true;
       borrarReconexion();
@@ -53,7 +56,8 @@ export function iniciarJuego(room: SalaJuego, volverAlMenu: (msg?: string) => vo
     // Solo en desarrollo: ?bucle=temporizador mantiene el juego en marcha aunque la pestaña no se dibuje (pruebas automáticas).
     fps: { target: 60, forceSetTimeOut: import.meta.env.DEV && location.search.includes("bucle=temporizador") },
     disableContextMenu: true,
-    scene: [Carga, Mundo, Hud, MgMemoria, MgCara, MgTransmutacion, MgRayos, MgValvulas],
+    scene: [Carga, Mundo, Hud, MgMemoria, MgCara, MgTransmutacion, MgRayos, MgValvulas, MgCodigo, MgRitmo],
+    input: { activePointers: 4 },
     callbacks: { preBoot: (g) => g.registry.set("ctx", c) },
   });
   if (import.meta.env.DEV) (window as unknown as { juego: Phaser.Game }).juego = juego;

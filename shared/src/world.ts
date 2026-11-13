@@ -55,6 +55,16 @@ export interface MapObject {
   props: Record<string, string | number | boolean>;
 }
 
+/** Tipos de bloqueo dinámico (máscara). */
+export const DYN_TODOS = 1;
+/** Solo frena a los aliens (vallas láser: los humanos pasan). */
+export const DYN_ALIENS = 2;
+/** Frena a todos menos al Escarabajo bajo tierra (contenedores, escombros). */
+export const DYN_SUPERFICIE = 4;
+/** Además bloquea disparos. */
+export const DYN_DISPARO = 8;
+export type Quien = 0 | 1 | 2;
+
 export interface Circle {
   x: number;
   y: number;
@@ -82,6 +92,8 @@ export class World {
   readonly bridged: Uint8Array;
   /** Contador de puertas cerradas sobre la celda. */
   readonly closedDoor: Uint8Array;
+  /** Bloqueos dinámicos (retos, muros, vallas). Contadores por tipo, ver DYN_*. */
+  readonly dyn: Record<number, Uint8Array> = {};
   readonly doorCells = new Map<string, number[]>();
   readonly doorOpen = new Map<string, boolean>();
   readonly objects: MapObject[] = [];
@@ -96,6 +108,7 @@ export class World {
     this.liquid = new Uint8Array(n);
     this.bridged = new Uint8Array(n);
     this.closedDoor = new Uint8Array(n);
+    for (const m of [DYN_TODOS, DYN_ALIENS, DYN_SUPERFICIE, DYN_DISPARO]) this.dyn[m] = new Uint8Array(n);
 
     const tileProps = new Map<number, Record<string, unknown>>();
     for (const ts of map.tilesets) {
@@ -155,21 +168,45 @@ export class World {
     return cx >= 0 && cy >= 0 && cx < this.w && cy < this.h;
   }
 
-  blocksMove(cx: number, cy: number): boolean {
+  /**
+   * ¿Bloquea el paso? quien: 0 = unidad (guardias, aliados), 1 = jugador, 2 = jugador bajo tierra.
+   */
+  blocksMove(cx: number, cy: number, quien: Quien = 0): boolean {
     if (!this.inBounds(cx, cy)) return true;
     const i = this.idx(cx, cy);
     if (this.solid[i] || this.closedDoor[i]) return true;
+    if (this.dyn[DYN_TODOS][i]) return true;
+    if (quien !== 0 && this.dyn[DYN_ALIENS][i]) return true;
+    if (quien !== 2 && this.dyn[DYN_SUPERFICIE][i]) return true;
     return this.liquid[i] === 1 && this.bridged[i] === 0;
   }
 
   blocksShot(cx: number, cy: number): boolean {
     if (!this.inBounds(cx, cy)) return true;
     const i = this.idx(cx, cy);
-    return this.solid[i] === 1 || this.closedDoor[i] > 0;
+    return this.solid[i] === 1 || this.closedDoor[i] > 0 || this.dyn[DYN_DISPARO][i] > 0;
   }
 
-  blocksMoveAt(x: number, y: number): boolean {
-    return this.blocksMove(Math.floor(x / TILE), Math.floor(y / TILE));
+  blocksMoveAt(x: number, y: number, quien: Quien = 0): boolean {
+    return this.blocksMove(Math.floor(x / TILE), Math.floor(y / TILE), quien);
+  }
+
+  /** Suma (+1) o quita (-1) un bloqueo dinámico en un rectángulo de casillas. */
+  addDyn(tx: number, ty: number, tw: number, th: number, mask: number, delta: 1 | -1): void {
+    for (const m of [DYN_TODOS, DYN_ALIENS, DYN_SUPERFICIE, DYN_DISPARO]) {
+      if (!(mask & m)) continue;
+      const arr = this.dyn[m];
+      for (let y = ty; y < ty + th; y++)
+        for (let x = tx; x < tx + tw; x++) {
+          if (!this.inBounds(x, y)) continue;
+          const i = this.idx(x, y);
+          arr[i] = Math.max(0, arr[i] + delta);
+        }
+    }
+  }
+
+  clearDyn(): void {
+    for (const m of [DYN_TODOS, DYN_ALIENS, DYN_SUPERFICIE, DYN_DISPARO]) this.dyn[m].fill(0);
   }
 
   blocksShotAt(x: number, y: number): boolean {
@@ -188,7 +225,7 @@ export class World {
   }
 
   /** Mueve un círculo deslizándose contra paredes y obstáculos. */
-  moveCircle(x: number, y: number, dx: number, dy: number, r: number, extra?: readonly Circle[]): { x: number; y: number } {
+  moveCircle(x: number, y: number, dx: number, dy: number, r: number, extra?: readonly Circle[], quien: Quien = 0): { x: number; y: number } {
     const dist = Math.hypot(dx, dy);
     const steps = Math.max(1, Math.ceil(dist / (r * 0.5)));
     let px = x;
@@ -196,14 +233,14 @@ export class World {
     for (let s = 0; s < steps; s++) {
       px += dx / steps;
       py += dy / steps;
-      const res = this.resolve(px, py, r, extra);
+      const res = this.resolve(px, py, r, extra, quien);
       px = res.x;
       py = res.y;
     }
     return { x: px, y: py };
   }
 
-  resolve(x: number, y: number, r: number, extra?: readonly Circle[]): { x: number; y: number } {
+  resolve(x: number, y: number, r: number, extra?: readonly Circle[], quien: Quien = 0): { x: number; y: number } {
     for (let iter = 0; iter < 3; iter++) {
       let moved = false;
       const x0 = Math.floor((x - r) / TILE);
@@ -212,7 +249,7 @@ export class World {
       const y1 = Math.floor((y + r) / TILE);
       for (let cy = y0; cy <= y1; cy++) {
         for (let cx = x0; cx <= x1; cx++) {
-          if (!this.blocksMove(cx, cy)) continue;
+          if (!this.blocksMove(cx, cy, quien)) continue;
           const rx0 = cx * TILE;
           const ry0 = cy * TILE;
           const px = clamp(x, rx0, rx0 + TILE);
@@ -252,8 +289,10 @@ export class World {
         y = c.y + (ddy / d) * min;
         moved = true;
       };
-      for (const c of this.obstacles) pushOut(c);
-      if (extra) for (const c of extra) pushOut(c);
+      if (quien !== 2) {
+        for (const c of this.obstacles) pushOut(c);
+        if (extra) for (const c of extra) pushOut(c);
+      }
       if (!moved) break;
     }
     return { x, y };

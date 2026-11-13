@@ -17,6 +17,8 @@ export interface ArrayLike2<T> {
 export interface PlayerS {
   nombre: string;
   kind: string;
+  forma: string;
+  skin: number;
   x: number;
   y: number;
   aim: number;
@@ -28,15 +30,38 @@ export interface PlayerS {
   estado: string;
   estadoT: number;
   confuso: number;
-  disfrazado: boolean;
+  velocidad: number;
   energia: number;
   enfriamiento: number;
-  habilidad: string;
+  enfMax: number;
+  ulti: number;
+  ultiT: number;
+  ultiMax: number;
+  disparando: boolean;
+  disfrazado: boolean;
+  identidad: string;
+  sospecha: number;
+  cautivo: string;
+  bajoTierra: boolean;
+  tunel: number;
+  controla: string;
+  escudo: number;
+  punal: number;
+  colonia: number;
+  canal: number;
+  canalTipo: string;
   almas: ArrayLike2<string>;
+  mejoras: ArrayLike2<string>;
+  oferta: string;
+  ofertasPendientes: number;
   seq: number;
   ocupado: string;
   rescate: number;
+  vidasSolo: number;
   bajas: number;
+  curado: number;
+  rescates: number;
+  apoyo: number;
 }
 
 export interface UnitS {
@@ -53,6 +78,12 @@ export interface UnitS {
   escudo: boolean;
   tanques: number;
   moviendo: boolean;
+  poseido: string;
+  dueno: string;
+  infeccion: number;
+  frio: number;
+  fase: number;
+  etiqueta: string;
 }
 
 export interface ProjectileS {
@@ -73,6 +104,7 @@ export interface ZoneS {
   y: number;
   r: number;
   vida: number;
+  total: number;
 }
 
 export interface PropS {
@@ -87,20 +119,52 @@ export interface PropS {
 
 export interface DoorS {
   abierta: boolean;
+  sellada: boolean;
 }
 
-export interface PuzzleS {
+export interface RetoS {
+  def: string;
+  slot: string;
   estado: string;
   tiempo: number;
   total: number;
+  progreso: number;
   actores: string;
   solo: boolean;
   datos: string;
+  texto: string;
+}
+
+/** Alias: los minijuegos de consola leen el reto de su sala. */
+export type PuzzleS = RetoS;
+
+export interface PzObjS {
+  k: string;
+  x: number;
+  y: number;
+  st: string;
+  v: number;
+  txt: string;
+  c: number;
+  ang: number;
+  f: number;
+  reto: string;
+  r: number;
+}
+
+export interface BloqueoS {
+  k: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  m: number;
 }
 
 export interface SoulS {
   kind: string;
   de: string;
+  dueno: string;
   x: number;
   y: number;
 }
@@ -109,14 +173,23 @@ export interface GameStateS {
   fase: string;
   tiempo: number;
   objetivo: string;
+  sector: number;
   jefe: string;
+  eclipse: number;
+  apagon: number;
+  compuerta: number;
+  plan: string;
+  crisis: string;
+  equipo: number;
   jugadores: MapLike<PlayerS>;
   unidades: MapLike<UnitS>;
   proyectiles: MapLike<ProjectileS>;
   zonas: MapLike<ZoneS>;
   objetos: MapLike<PropS>;
   puertas: MapLike<DoorS>;
-  puzzles: MapLike<PuzzleS>;
+  retos: MapLike<RetoS>;
+  pz: MapLike<PzObjS>;
+  bloqueos: MapLike<BloqueoS>;
   almas: MapLike<SoulS>;
 }
 

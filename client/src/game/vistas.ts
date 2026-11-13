@@ -7,8 +7,16 @@ const PIES = 118 / 128;
 
 const ARMAS: Record<string, { k: string; dist: number; escala: number }> = {
   cambiaformas: { k: "pistola", dist: 10, escala: 0.8 },
+  skin1cambiaformas: { k: "pistola", dist: 10, escala: 0.8 },
   cambiaformas_humano: { k: "pistola", dist: 10, escala: 0.8 },
   delmar: { k: "lanza", dist: -8, escala: 0.72 },
+  skin1delmar: { k: "lanza", dist: -8, escala: 0.72 },
+  vesper: { k: "cuchillo", dist: 12, escala: 0.75 },
+  skin1vesper: { k: "cuchillo", dist: 12, escala: 0.75 },
+  freeze: { k: "lanzahielo", dist: 8, escala: 0.8 },
+  skin1freeze: { k: "lanzahielo", dist: 8, escala: 0.8 },
+  laser: { k: "rifle_laser", dist: 4, escala: 0.85 },
+  oficial: { k: "rifle", dist: 6, escala: 0.8 },
   fusilero: { k: "rifle", dist: 6, escala: 0.8 },
   lanzarredes: { k: "arma_red", dist: 6, escala: 0.8 },
   lanzallamas: { k: "arma_llamas", dist: 6, escala: 0.85 },
@@ -59,6 +67,7 @@ export class VistaPersonaje {
 
   setSheet(sheet: string): void {
     if (sheet === this.sheet) return;
+    if (!this.s.textures.exists(sheet)) return;
     this.sheet = sheet;
     this.anim = "";
     this.cuerpo.setTexture(sheet, 0);

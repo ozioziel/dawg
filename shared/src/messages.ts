@@ -25,7 +25,13 @@ export interface InputMsg {
   aim: number;
   shoot: boolean;
 }
+/** Habilidad activa: "down" al pulsar y "up" al soltar (para las que se mantienen). */
 export interface AbilityMsg {
+  x: number;
+  y: number;
+  fase?: "down" | "up";
+}
+export interface UltiMsg {
   x: number;
   y: number;
 }
@@ -40,10 +46,18 @@ export interface PingMsg {
 export interface ChatMsg {
   texto: string;
 }
+export interface MejoraMsg {
+  /** Índice de la opción elegida (0..2). */
+  i: number;
+}
+export interface ReiniciarMsg {
+  /** "sector": volver al inicio del sector actual. "todo": empezar desde cero. */
+  modo?: "sector" | "todo";
+}
 /** Eventos de minijuego que el cliente reporta. */
 export interface MinigameMsg {
   id: string;
-  ev: "fallo" | "acierto" | "nota";
+  ev: "fallo" | "acierto" | "nota" | "codigo" | "ritmo";
   nota?: number;
   /** Carril de la esclusa cuando una sola persona maneja las dos palancas. */
   lane?: "A" | "B";
@@ -51,10 +65,15 @@ export interface MinigameMsg {
   /** Acierto hecho bien y rápido: resta tiempo al minijuego. */
   rapido?: boolean;
   razon?: string;
+  /** Código introducido (consola del inspector). */
+  codigo?: number[];
+  /** Aciertos/total del ritmo. */
+  aciertos?: number;
+  total?: number;
 }
 
 // ---- Servidor → cliente ----
-export type AvisoTipo = "info" | "peligro" | "exito" | "alma" | "rescate";
+export type AvisoTipo = "info" | "peligro" | "exito" | "alma" | "rescate" | "sector";
 export interface AvisoMsg {
   texto: string;
   tipo: AvisoTipo;
@@ -88,7 +107,36 @@ export type FxTipo =
   | "chispa"
   | "ladrido"
   | "revelado"
-  | "nucleo";
+  | "nucleo"
+  | "tajo"
+  | "mordida"
+  | "teleport"
+  | "excavar"
+  | "emerger"
+  | "chorro"
+  | "congelar"
+  | "devorar"
+  | "curar"
+  | "infectar"
+  | "asimilar"
+  | "absorber"
+  | "escaneo"
+  | "disfraz"
+  | "berserk"
+  | "singularidad"
+  | "kraken"
+  | "jardin"
+  | "eclipse"
+  | "cero"
+  | "fusion"
+  | "tentaculo"
+  | "tunel"
+  | "laser"
+  | "agarre"
+  | "texto"
+  | "reaparecer"
+  | "mejora"
+  | "alarma";
 export interface FxEvent {
   t: FxTipo;
   x: number;
@@ -97,10 +145,12 @@ export interface FxEvent {
   y2?: number;
   r?: number;
   c?: number;
+  /** Texto (para "texto"). */
+  s?: string;
 }
-/** Secuencia de la consola de la Sala de rayos (solo para quien la mira). */
-export interface RayosSeqMsg {
-  ronda: number;
-  secuencia: number[];
-  indice: number;
+/** Código que la consola del inspector muestra solo al Cambiaformas. */
+export interface CodigoMsg {
+  reto: string;
+  codigo: number[];
+  hasta: number;
 }

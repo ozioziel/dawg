@@ -11,6 +11,6 @@ services:
     restart: unless-stopped
     environment:
       PORT: "2567"
-      JUGADORES_MINIMOS: "3"
+      JUGADORES_MINIMOS: "1"
     ports:
       - "6703:2567"

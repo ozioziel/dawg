@@ -14,6 +14,7 @@ export function mostrarMenu(alEmpezar: AlEmpezar, error = ""): void {
   const nombre = h("input", { type: "text", maxlength: 14, placeholder: "Tu nombre", value: leerLocal("dawg:nombre") });
   const codigo = h("input", { type: "text", maxlength: 4, placeholder: "ABCD", style: "text-transform:uppercase;letter-spacing:.3em;text-align:center" });
   nombre.id = "menu-name";
+  let soloModo = false;
   codigo.id = "menu-code";
   const estado = h("div", { class: "menu-status", role: "status" }, error);
   const err = h("div", { class: "error", role: "alert" });
@@ -30,7 +31,7 @@ export function mostrarMenu(alEmpezar: AlEmpezar, error = ""): void {
         crear.disabled = true;
         err.textContent = "Creando sala…";
         try {
-          const room = await cliente.create<never>("lobby", { nombre: nombreValido() });
+          const room = await cliente.create<never>("lobby", { nombre: nombreValido(), solo: soloModo });
           mostrarLobby(room as unknown as SalaLobby, alEmpezar);
         } catch (e) {
           err.textContent = mensajeError(e);
@@ -84,11 +85,13 @@ export function mostrarMenu(alEmpezar: AlEmpezar, error = ""): void {
     err,
   );
   panelTitulo.id = "menu-panel-title";
-  const abrirPanel = (modo: "crear" | "unirse") => {
+  const abrirPanel = (modo: "crear" | "unirse" | "solo") => {
     panel.hidden = false;
-    panelTitulo.textContent = modo === "crear" ? "Nueva partida" : "Unirse a una partida";
+    soloModo = modo === "solo";
+    panelTitulo.textContent = modo === "crear" ? "Nueva partida (1 a 5 jugadores)" : modo === "solo" ? "Partida en solitario" : "Unirse a una partida";
+    crear.textContent = modo === "solo" ? "EMPEZAR SOLO" : "CREAR SALA";
     campoCodigo.hidden = modo !== "unirse";
-    crear.hidden = modo !== "crear";
+    crear.hidden = modo === "unirse";
     unirse.hidden = modo !== "unirse";
     err.textContent = "";
     nombre.focus();
@@ -107,6 +110,7 @@ export function mostrarMenu(alEmpezar: AlEmpezar, error = ""): void {
         h(
           "nav",
           { class: "menu-options", "aria-label": "Menú principal" },
+          h("button", { class: "menu-action", onclick: () => abrirPanel("solo") }, "JUGAR SOLO"),
           h("button", { class: "menu-action", onclick: () => abrirPanel("crear") }, "CREAR SALA"),
           h("button", { class: "menu-action", onclick: () => abrirPanel("unirse") }, "UNIRSE"),
           h("button", { class: "menu-action", onclick: () => ayudaControles() }, "CONTROLES"),
@@ -151,14 +155,25 @@ function mostrarLobby(room: SalaLobby, alEmpezar: AlEmpezar): void {
       "div",
       { class: "opcion", onclick: () => room.send("elegir", { alien: k }) },
       h("img", { src: `assets/personajes/retrato_${k}.png`, alt: def.nombre }),
-      h("div", { class: "opcion-texto" }, h("h3", { style: `color:${def.colorCss}` }, def.nombre), h("p", {}, def.descripcion), quien),
+      h("div", { class: "opcion-texto" }, h("h3", { style: `color:${def.colorCss}` }, def.nombre), h("p", { class: "opcion-rol" }, def.rol), h("p", {}, def.descripcion), quien),
     );
     tarjetas.set(k, card);
     grid.append(card);
   }
   const skinBtn = h("button", { class: "menu-action menu-skin", onclick: () => room.send("skin", {}) }, "SKIN: ORIGINAL");
   const chips = h("div", { class: "jugadores" });
-  const listo = h("button", { class: "menu-action", onclick: () => room.send("listo", { ready: !(room.state.jugadores.get(room.sessionId)?.listo ?? false) }) }, "LISTO");
+  const listo = h(
+    "button",
+    {
+      class: "menu-action",
+      onclick: () => {
+        const yo = room.state.jugadores.get(room.sessionId);
+        if (yo?.anfitrion) room.send("empezar", {});
+        else room.send("listo", { ready: !(yo?.listo ?? false) });
+      },
+    },
+    "LISTO",
+  );
   const salirBtn = h(
     "button",
     {
@@ -217,18 +232,29 @@ function mostrarLobby(room: SalaLobby, alEmpezar: AlEmpezar): void {
     st.jugadores.forEach((p, id) => {
       chips.append(h("span", { class: `chip ${p.listo ? "listo" : ""}` }, `${p.nombre}${id === room.sessionId ? " (tú)" : ""}${p.anfitrion ? " ★" : ""}`));
     });
-    for (let i = st.jugadores.size; i < st.necesarios; i++) chips.append(h("span", { class: "chip", style: "opacity:.5" }, "Esperando…"));
-    listo.textContent = yo?.listo ? "CANCELAR" : "LISTO";
-    listo.disabled = !yo?.alien;
+    for (let i = st.jugadores.size; i < 5; i++) chips.append(h("span", { class: "chip", style: "opacity:.35" }, "libre"));
+    const todos: { anfitrion: boolean; listo: boolean; alien: string }[] = [];
+    st.jugadores.forEach((p) => todos.push(p));
+    const listos = todos.every((p) => p.anfitrion || (p.listo && p.alien));
+    listo.textContent = yo?.anfitrion ? (todos.length === 1 ? "EMPEZAR SOLO" : "EMPEZAR") : yo?.listo ? "CANCELAR" : "LISTO";
+    listo.disabled = !yo?.alien || (Boolean(yo?.anfitrion) && !listos);
     skinBtn.disabled = !yo?.alien;
     skinBtn.textContent = yo?.skin ? "SKIN: ALTERNATIVA" : "SKIN: ORIGINAL";
     const faltan = st.necesarios - st.jugadores.size;
     estado.textContent =
       faltan > 0
-        ? `Comparte el código. Faltan ${faltan} jugador${faltan > 1 ? "es" : ""} (la partida necesita ${st.necesarios}).`
+        ? `Comparte el código. Faltan ${faltan} jugador${faltan > 1 ? "es" : ""}.`
         : !yo?.alien
-          ? "Elige tu alien."
-          : `Cuando los ${st.necesarios} estén listos, empieza la partida.`;
+          ? "Elige tu alien (cada jugador uno distinto)."
+          : yo.anfitrion
+            ? todos.length === 1
+              ? "Puedes empezar solo o esperar a que entren hasta 4 amigos con el código."
+              : listos
+                ? "¡Todos listos! Pulsa EMPEZAR."
+                : "Esperando a que todos marquen LISTO…"
+            : yo.listo
+              ? "Listo. El anfitrión ★ empezará la partida."
+              : "Marca LISTO cuando hayas elegido.";
     if (st.estado === "empezando" && st.cuenta > 0) {
       cuenta.style.display = "grid";
       cuenta.textContent = String(st.cuenta);

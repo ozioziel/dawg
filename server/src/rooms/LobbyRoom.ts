@@ -1,21 +1,22 @@
-// Sala de espera: código de 4 letras, cada jugador elige un alien distinto y marca "listo".
-// Con todos listos se crea la partida y se reserva un asiento para cada uno.
+// Sala de espera: código de 4 letras, de 1 a 5 jugadores, cada uno con un alien distinto.
+// El anfitrión empieza la partida cuando todos están listos (en solitario, en cuanto elige alien).
 import { Room, matchMaker, type Client } from "@colyseus/core";
-import { LOBBY_BOUNDS, ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, isAlienKind, type LobbyMoveMsg, type PickMsg, type ReadyMsg } from "@dawg/shared";
+import { LOBBY_BOUNDS, MAX_JUGADORES, ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, isAlienKind, type LobbyMoveMsg, type PickMsg, type ReadyMsg } from "@dawg/shared";
 import { randomUUID } from "node:crypto";
 import { LobbyPlayer, LobbyState } from "../schema/LobbyState";
 import { jugadoresNecesarios } from "../config";
 
 export class LobbyRoom extends Room<LobbyState> {
-  override maxClients = 3;
+  override maxClients = MAX_JUGADORES;
   override state = new LobbyState();
   private countdown?: { clear(): void };
 
-  override async onCreate(): Promise<void> {
+  override async onCreate(options: { solo?: boolean }): Promise<void> {
     this.roomId = await this.codigoUnico();
     this.state.codigo = this.roomId;
-    this.state.necesarios = jugadoresNecesarios();
-    this.maxClients = Math.max(this.state.necesarios, 1);
+    // Una partida en solitario nunca espera a nadie más.
+    this.state.necesarios = options?.solo ? 1 : jugadoresNecesarios();
+    this.maxClients = options?.solo ? 1 : MAX_JUGADORES;
     await this.setPrivate(true);
 
     this.onMessage("elegir", (client, msg: PickMsg) => {
@@ -27,13 +28,19 @@ export class LobbyRoom extends Room<LobbyState> {
       });
       if (ocupado) return;
       p.alien = msg.alien;
-      p.listo = false;
+      p.listo = p.anfitrion;
     });
 
     this.onMessage("listo", (client, msg: ReadyMsg) => {
       const p = this.state.jugadores.get(client.sessionId);
       if (!p || this.state.estado !== "esperando") return;
       p.listo = Boolean(msg?.ready) && p.alien !== "";
+    });
+
+    this.onMessage("empezar", (client) => {
+      const p = this.state.jugadores.get(client.sessionId);
+      if (!p || !p.anfitrion || this.state.estado !== "esperando") return;
+      if (p.alien) p.listo = true;
       this.revisar();
     });
 
@@ -61,7 +68,7 @@ export class LobbyRoom extends Room<LobbyState> {
     const p = new LobbyPlayer();
     p.nombre = limpiarNombre(options?.nombre);
     p.anfitrion = this.state.jugadores.size === 0;
-    p.x = 0.3 + 0.2 * this.state.jugadores.size;
+    p.x = 0.2 + 0.15 * this.state.jugadores.size;
     p.y = 0.7;
     this.state.jugadores.set(client.sessionId, p);
   }
@@ -84,8 +91,12 @@ export class LobbyRoom extends Room<LobbyState> {
 
   private revisar(): void {
     const lista = [...this.state.jugadores.values()];
-    const listos = lista.length >= this.state.necesarios && lista.every((p) => p.listo && p.alien);
-    if (!listos || this.state.estado !== "esperando") return;
+    const aliens = new Set(lista.map((p) => p.alien));
+    const listos = lista.length >= this.state.necesarios && lista.every((p) => p.listo && p.alien) && aliens.size === lista.length;
+    if (!listos || this.state.estado !== "esperando") {
+      this.broadcast("error", "Para empezar, cada jugador debe elegir un alien distinto y marcar «Listo».");
+      return;
+    }
     this.state.estado = "empezando";
     this.state.cuenta = 3;
     this.lock();
@@ -101,9 +112,9 @@ export class LobbyRoom extends Room<LobbyState> {
   }
 
   private async empezar(): Promise<void> {
-    const roster = [...this.state.jugadores.entries()].map(([id, p]) => ({ id, nombre: p.nombre, alien: p.alien, token: randomUUID() }));
+    const roster = [...this.state.jugadores.entries()].map(([id, p]) => ({ id, nombre: p.nombre, alien: p.alien, skin: p.skin, token: randomUUID() }));
     try {
-      const sala = await matchMaker.createRoom("partida", { roster: roster.map(({ nombre, alien, token }) => ({ nombre, alien, token })), codigo: this.state.codigo });
+      const sala = await matchMaker.createRoom("partida", { roster: roster.map(({ nombre, alien, skin, token }) => ({ nombre, alien, skin, token })), codigo: this.state.codigo });
       for (const r of roster) {
         const client = this.clients.find((c) => c.sessionId === r.id);
         if (!client) continue;

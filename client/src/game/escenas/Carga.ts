@@ -1,6 +1,7 @@
-// Carga de sprites, casillas y mapa; luego arranca el mundo y el HUD.
+// Carga de sprites, casillas y el mapa del Área 51; luego arranca el mundo y el HUD.
 import Phaser from "phaser";
-import mapa from "../../../../maps/area1.json";
+import { ALIEN_KINDS } from "@dawg/shared";
+import mapa from "../../../../maps/area51.json";
 import { TITULO, ctx } from "../contexto";
 
 export const ANIMS_DIRS = ["down", "up", "side"] as const;
@@ -25,14 +26,15 @@ export class Carga extends Phaser.Scene {
 
     this.load.setPath("assets/");
     this.load.image("tiles", "tiles.png");
-    this.load.tilemapTiledJSON("area1", mapa);
+    this.load.tilemapTiledJSON("area51", mapa);
     // El manifiesto (generado junto con el arte) dice qué sprites hay y su tamaño.
     this.load.json("manifest", "manifest.json");
     this.load.once("filecomplete-json-manifest", (_k: string, _t: string, m: Manifest) => {
       for (const [name, info] of Object.entries(m.personajes)) {
         this.load.spritesheet(name, `personajes/${name}.png`, { frameWidth: info.frame, frameHeight: info.frame });
       }
-      for (const k of ["cambiaformas", "cambiaformas_humano", "delmar", "inteligente"]) this.load.image(`retrato_${k}`, `personajes/retrato_${k}.png`);
+      // Miniaturas de 128 px para el HUD (los retratos grandes solo se usan en el lobby).
+      for (const k of [...ALIEN_KINDS, "cambiaformas_humano"]) this.load.image(`retrato_${k}`, `personajes/mini_${k}.png`);
       for (const [name, info] of Object.entries(m.objetos)) {
         if (info.frames > 1) this.load.spritesheet(name, `objetos/${name}.png`, { frameWidth: info.w, frameHeight: info.h });
         else this.load.image(name, `objetos/${name}.png`);
@@ -48,7 +50,7 @@ export class Carga extends Phaser.Scene {
         this.anims.create({
           key: `${name}-${dir}-caminar`,
           frames: [1, 0, 2, 0].map((f) => ({ key: name, frame: d * 3 + f })),
-          frameRate: name === "perro" ? 12 : 8,
+          frameRate: name === "perro" || name === "cazador" || name === "escarabajo" || name === "skin1escarabajo" ? 13 : name === "dron" ? 16 : 8,
           repeat: -1,
         });
       });

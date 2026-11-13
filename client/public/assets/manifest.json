@@ -50,6 +50,78 @@
     },
     "pulpo": {
       "frame": 128
+    },
+    "curandera": {
+      "frame": 128
+    },
+    "skin1curandera": {
+      "frame": 128
+    },
+    "vesper": {
+      "frame": 128
+    },
+    "skin1vesper": {
+      "frame": 128
+    },
+    "freeze": {
+      "frame": 128
+    },
+    "skin1freeze": {
+      "frame": 128
+    },
+    "escarabajo": {
+      "frame": 128
+    },
+    "skin1escarabajo": {
+      "frame": 128
+    },
+    "simbionte": {
+      "frame": 128
+    },
+    "skin1simbionte": {
+      "frame": 128
+    },
+    "cambiaformas_berserk": {
+      "frame": 128
+    },
+    "simbionte_coloso": {
+      "frame": 192
+    },
+    "kraken": {
+      "frame": 160
+    },
+    "cria": {
+      "frame": 128
+    },
+    "planta": {
+      "frame": 128
+    },
+    "robot": {
+      "frame": 128
+    },
+    "cazador": {
+      "frame": 128
+    },
+    "laser": {
+      "frame": 128
+    },
+    "dron": {
+      "frame": 128
+    },
+    "inspector": {
+      "frame": 128
+    },
+    "tecnico": {
+      "frame": 128
+    },
+    "oficial": {
+      "frame": 128
+    },
+    "centinela": {
+      "frame": 256
+    },
+    "director": {
+      "frame": 192
     }
   },
   "objetos": {
@@ -381,6 +453,541 @@
     "ping_voy": {
       "w": 48,
       "h": 48,
+      "frames": 1
+    },
+    "consola_c": {
+      "w": 96,
+      "h": 96,
+      "frames": 1
+    },
+    "teclado": {
+      "w": 96,
+      "h": 96,
+      "frames": 1
+    },
+    "clave": {
+      "w": 48,
+      "h": 48,
+      "frames": 1
+    },
+    "escaner": {
+      "w": 96,
+      "h": 112,
+      "frames": 1
+    },
+    "terminal_c": {
+      "w": 96,
+      "h": 96,
+      "frames": 1
+    },
+    "terminal_emergencia": {
+      "w": 96,
+      "h": 96,
+      "frames": 1
+    },
+    "cinta": {
+      "w": 64,
+      "h": 48,
+      "frames": 1
+    },
+    "hueco": {
+      "w": 64,
+      "h": 64,
+      "frames": 4
+    },
+    "componente": {
+      "w": 48,
+      "h": 48,
+      "frames": 4
+    },
+    "conducto": {
+      "w": 64,
+      "h": 32,
+      "frames": 1
+    },
+    "reactor": {
+      "w": 96,
+      "h": 112,
+      "frames": 1
+    },
+    "deposito": {
+      "w": 80,
+      "h": 80,
+      "frames": 1
+    },
+    "valvula_cal": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "soporte": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "valvula_rota": {
+      "w": 64,
+      "h": 64,
+      "frames": 2
+    },
+    "medidor": {
+      "w": 80,
+      "h": 96,
+      "frames": 1
+    },
+    "ranura": {
+      "w": 64,
+      "h": 64,
+      "frames": 3
+    },
+    "celda": {
+      "w": 48,
+      "h": 48,
+      "frames": 1
+    },
+    "proyector": {
+      "w": 64,
+      "h": 80,
+      "frames": 1
+    },
+    "interruptor_t": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "anillo": {
+      "w": 128,
+      "h": 128,
+      "frames": 1
+    },
+    "regulador": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "barrera_bio": {
+      "w": 96,
+      "h": 112,
+      "frames": 1
+    },
+    "nodo_nutricion": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "raiz": {
+      "w": 64,
+      "h": 18,
+      "frames": 1
+    },
+    "sintetizador": {
+      "w": 96,
+      "h": 96,
+      "frames": 1
+    },
+    "muestra": {
+      "w": 48,
+      "h": 48,
+      "frames": 4
+    },
+    "rejilla": {
+      "w": 80,
+      "h": 80,
+      "frames": 1
+    },
+    "bomba": {
+      "w": 96,
+      "h": 96,
+      "frames": 1
+    },
+    "terminal_v": {
+      "w": 96,
+      "h": 96,
+      "frames": 1
+    },
+    "plataforma": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "marca_inicio": {
+      "w": 80,
+      "h": 48,
+      "frames": 1
+    },
+    "control_umbrio": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "foco": {
+      "w": 48,
+      "h": 48,
+      "frames": 1
+    },
+    "cierre": {
+      "w": 64,
+      "h": 80,
+      "frames": 1
+    },
+    "tuberia_caliente": {
+      "w": 96,
+      "h": 96,
+      "frames": 1
+    },
+    "respiradero": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "marca_muro": {
+      "w": 96,
+      "h": 48,
+      "frames": 1
+    },
+    "valvula_f": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "celula": {
+      "w": 80,
+      "h": 96,
+      "frames": 1
+    },
+    "pasarela_hielo": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "cierre_calor": {
+      "w": 64,
+      "h": 80,
+      "frames": 1
+    },
+    "fuga": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "interruptor_sismico": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "grieta": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "placa": {
+      "w": 64,
+      "h": 64,
+      "frames": 2
+    },
+    "entrada_galeria": {
+      "w": 80,
+      "h": 48,
+      "frames": 1
+    },
+    "palanca_liberacion": {
+      "w": 64,
+      "h": 80,
+      "frames": 1
+    },
+    "suelo_blando": {
+      "w": 80,
+      "h": 64,
+      "frames": 1
+    },
+    "lector": {
+      "w": 80,
+      "h": 80,
+      "frames": 1
+    },
+    "biometrica": {
+      "w": 80,
+      "h": 80,
+      "frames": 1
+    },
+    "seguro": {
+      "w": 64,
+      "h": 80,
+      "frames": 1
+    },
+    "panel_fusibles": {
+      "w": 96,
+      "h": 96,
+      "frames": 1
+    },
+    "fusible": {
+      "w": 48,
+      "h": 48,
+      "frames": 1
+    },
+    "terminal_pirateo": {
+      "w": 96,
+      "h": 96,
+      "frames": 1
+    },
+    "aro_zona": {
+      "w": 128,
+      "h": 128,
+      "frames": 1
+    },
+    "espejo": {
+      "w": 64,
+      "h": 64,
+      "frames": 2
+    },
+    "emisor": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "receptor": {
+      "w": 64,
+      "h": 64,
+      "frames": 2
+    },
+    "railes": {
+      "w": 64,
+      "h": 32,
+      "frames": 1
+    },
+    "carro": {
+      "w": 96,
+      "h": 80,
+      "frames": 1
+    },
+    "meta": {
+      "w": 96,
+      "h": 64,
+      "frames": 1
+    },
+    "alarma": {
+      "w": 64,
+      "h": 80,
+      "frames": 2
+    },
+    "lector_tarjeta": {
+      "w": 96,
+      "h": 96,
+      "frames": 1
+    },
+    "tarjeta": {
+      "w": 48,
+      "h": 48,
+      "frames": 1
+    },
+    "valvula_purga": {
+      "w": 64,
+      "h": 64,
+      "frames": 2
+    },
+    "baldosa": {
+      "w": 64,
+      "h": 64,
+      "frames": 2
+    },
+    "marca_slot": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "sabotaje": {
+      "w": 96,
+      "h": 96,
+      "frames": 1
+    },
+    "refrigerante": {
+      "w": 80,
+      "h": 96,
+      "frames": 1
+    },
+    "capsula": {
+      "w": 96,
+      "h": 128,
+      "frames": 1
+    },
+    "consola_compuerta": {
+      "w": 96,
+      "h": 96,
+      "frames": 1
+    },
+    "parche": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "bq_abismo": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "bq_vidrio": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "bq_valla": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "bq_contenedor": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "bq_muro": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "bq_mampara": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "bq_arco": {
+      "w": 64,
+      "h": 64,
+      "frames": 1
+    },
+    "muro_hielo": {
+      "w": 64,
+      "h": 80,
+      "frames": 1
+    },
+    "tunel": {
+      "w": 96,
+      "h": 64,
+      "frames": 1
+    },
+    "monticulo": {
+      "w": 80,
+      "h": 48,
+      "frames": 2
+    },
+    "burbuja": {
+      "w": 128,
+      "h": 128,
+      "frames": 1
+    },
+    "luz": {
+      "w": 256,
+      "h": 256,
+      "frames": 1
+    },
+    "tentaculo": {
+      "w": 64,
+      "h": 20,
+      "frames": 1
+    },
+    "icono_cautivo": {
+      "w": 40,
+      "h": 40,
+      "frames": 1
+    },
+    "icono_agarre": {
+      "w": 40,
+      "h": 40,
+      "frames": 1
+    },
+    "icono_ulti": {
+      "w": 40,
+      "h": 40,
+      "frames": 1
+    },
+    "zona_eco": {
+      "w": 256,
+      "h": 256,
+      "frames": 1
+    },
+    "zona_jardin": {
+      "w": 256,
+      "h": 256,
+      "frames": 1
+    },
+    "zona_singularidad": {
+      "w": 256,
+      "h": 256,
+      "frames": 1
+    },
+    "zona_electrico": {
+      "w": 256,
+      "h": 256,
+      "frames": 1
+    },
+    "zona_aviso": {
+      "w": 256,
+      "h": 256,
+      "frames": 1
+    },
+    "zona_vapor": {
+      "w": 256,
+      "h": 256,
+      "frames": 1
+    },
+    "espina": {
+      "w": 28,
+      "h": 10,
+      "frames": 1
+    },
+    "fragmento": {
+      "w": 22,
+      "h": 22,
+      "frames": 1
+    },
+    "rayo_laser": {
+      "w": 64,
+      "h": 10,
+      "frames": 1
+    },
+    "misil": {
+      "w": 32,
+      "h": 16,
+      "frames": 1
+    },
+    "granada": {
+      "w": 24,
+      "h": 24,
+      "frames": 1
+    },
+    "cuchillo": {
+      "w": 56,
+      "h": 18,
+      "frames": 1
+    },
+    "lanzahielo": {
+      "w": 64,
+      "h": 24,
+      "frames": 1
+    },
+    "rifle_laser": {
+      "w": 64,
+      "h": 18,
+      "frames": 1
+    },
+    "generador": {
+      "w": 80,
+      "h": 96,
+      "frames": 1
+    },
+    "nodo": {
+      "w": 80,
+      "h": 96,
+      "frames": 1
+    },
+    "pilon": {
+      "w": 80,
+      "h": 128,
+      "frames": 1
+    },
+    "terminal": {
+      "w": 96,
+      "h": 96,
       "frames": 1
     }
   },

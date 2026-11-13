@@ -920,3 +920,386 @@ kbd {
   padding: 6px 14px;
   font-weight: 700;
 }
+
+/* ===================== Demo completa: 8 aliens, táctil y mejoras ===================== */
+.lobby-opciones {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-height: 52vh;
+  overflow-y: auto;
+}
+.opcion {
+  grid-template-columns: 52px 1fr;
+  gap: 8px;
+  padding: 6px 8px;
+}
+.opcion img {
+  width: 52px;
+  height: 52px;
+}
+.opcion .opcion-rol {
+  color: #cfd6d8;
+  font-weight: 700;
+}
+@media (max-width: 700px) {
+  .lobby-opciones {
+    grid-template-columns: 1fr;
+    max-height: 40vh;
+  }
+  .opcion p:not(.opcion-rol) {
+    display: none;
+  }
+}
+
+/* Controles táctiles */
+.tactil {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.tactil-zona {
+  position: absolute;
+  bottom: 0;
+  height: 62%;
+  pointer-events: auto;
+  touch-action: none;
+}
+.tactil-zona.izq {
+  left: 0;
+  width: 42%;
+}
+.tactil-zona.der {
+  right: 150px;
+  width: 30%;
+}
+.stick-base {
+  position: fixed;
+  width: 120px;
+  height: 120px;
+  margin: -60px 0 0 -60px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.35);
+  background: rgba(10, 22, 34, 0.35);
+  pointer-events: none;
+}
+.stick-punta {
+  position: absolute;
+  left: 34px;
+  top: 34px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(120, 232, 192, 0.55);
+  border: 3px solid #0a0a0c;
+}
+.tactil-btn {
+  position: absolute;
+  pointer-events: auto;
+  touch-action: none;
+  border-radius: 50%;
+  border: 3px solid #78e8c0;
+  background: rgba(10, 22, 34, 0.78);
+  color: #eaf6ff;
+  font: 700 12px "Chakra Petch", system-ui, sans-serif;
+  overflow: hidden;
+  padding: 0;
+  min-width: 0;
+}
+.tactil-btn.pulsado {
+  background: rgba(120, 232, 192, 0.45);
+}
+.tactil-btn.t-hab {
+  right: 24px;
+  bottom: 28px;
+  width: 96px;
+  height: 96px;
+}
+.tactil-btn.t-ulti {
+  right: 130px;
+  bottom: 22px;
+  width: 70px;
+  height: 70px;
+  border-color: #ffd23e;
+}
+.tactil-btn.t-ulti.lista {
+  box-shadow: 0 0 18px #ffd23e;
+}
+.tactil-btn.t-e {
+  right: 34px;
+  bottom: 136px;
+  width: 64px;
+  height: 64px;
+  font-size: 22px;
+}
+.tactil-btn.t-q {
+  right: 112px;
+  bottom: 104px;
+  width: 58px;
+  height: 58px;
+  font-size: 10px;
+}
+.tactil-btn.t-g {
+  right: 108px;
+  bottom: 170px;
+  width: 54px;
+  height: 54px;
+  font-size: 10px;
+}
+.tactil-btn.t-ping,
+.tactil-btn.t-mapa,
+.tactil-btn.t-chat,
+.tactil-btn.t-mejora {
+  top: calc(env(safe-area-inset-top, 0px) + 200px);
+  width: 46px;
+  height: 46px;
+  font-size: 20px;
+  right: 12px;
+}
+.tactil-btn.t-mapa {
+  top: calc(env(safe-area-inset-top, 0px) + 252px);
+}
+.tactil-btn.t-chat {
+  top: calc(env(safe-area-inset-top, 0px) + 304px);
+}
+.tactil-btn.t-mejora {
+  top: calc(env(safe-area-inset-top, 0px) + 356px);
+  border-color: #ffd23e;
+}
+.tactil-txt {
+  position: relative;
+  display: block;
+  padding: 0 6px;
+  line-height: 1.1;
+  font-size: 11px;
+  text-shadow: 0 1px 2px #000;
+}
+.tactil-cd {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+/* Recompensas */
+.mejoras {
+  position: fixed;
+  right: 14px;
+  bottom: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(300px, 46vw);
+  z-index: 6;
+}
+.mejoras-titulo {
+  font: 700 15px "Chakra Petch", system-ui, sans-serif;
+  color: #ffd23e;
+  text-shadow: 0 2px 3px #000;
+}
+.mejora-carta {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  grid-template-areas: "tecla nombre rareza" "tecla rama rama" "desc desc desc";
+  gap: 2px 8px;
+  text-align: left;
+  padding: 8px 10px;
+  border: 3px solid #cfe6ff;
+  border-radius: 10px;
+  background: rgba(10, 22, 34, 0.92);
+  color: #eaf6ff;
+  font: 13px "Chakra Petch", system-ui, sans-serif;
+  cursor: pointer;
+}
+.mejora-carta:hover {
+  background: rgba(30, 52, 70, 0.95);
+}
+.mejora-tecla {
+  grid-area: tecla;
+  font-weight: 700;
+  color: #ffd23e;
+}
+.mejora-carta strong {
+  grid-area: nombre;
+}
+.mejora-rareza {
+  grid-area: rareza;
+  font-weight: 700;
+}
+.mejora-rama {
+  grid-area: rama;
+  color: #9fb8c8;
+  font-size: 11px;
+}
+.mejora-desc {
+  grid-area: desc;
+  color: #cfe6ff;
+}
+@media (pointer: coarse) {
+  .mejoras {
+    bottom: auto;
+    top: 120px;
+    right: 64px;
+  }
+}
+
+/* Ayuda */
+.ayuda-caja {
+  max-height: 92vh;
+  overflow-y: auto;
+}
+.ayuda-aliens {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+  font-size: 13px;
+}
+.ayuda-alien span {
+  display: block;
+  color: #b8c8d0;
+}
+.tabla th {
+  font-size: 12px;
+  color: #9fb8c8;
+  padding: 2px 6px;
+}
+
+/* Fin de partida en pantallas estrechas (móvil en vertical) */
+@media (max-width: 600px) {
+  .fin .caja {
+    padding: 14px;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+  }
+  .fin .titulo {
+    font-size: clamp(30px, 10vw, 52px);
+    overflow-wrap: anywhere;
+  }
+  .fin .tabla {
+    display: block;
+    overflow-x: auto;
+    font-size: 13px;
+  }
+  .fin .tabla td,
+  .fin .tabla th {
+    padding: 3px 4px;
+  }
+  .fin .fila {
+    flex-wrap: wrap;
+  }
+}
+
+/* Móvil en horizontal (pantallas bajas): botones más compactos y sin solaparse */
+@media (max-height: 520px) {
+  .tactil-btn.t-hab {
+    right: 16px;
+    bottom: 14px;
+    width: 84px;
+    height: 84px;
+  }
+  .tactil-btn.t-ulti {
+    right: 110px;
+    bottom: 10px;
+    width: 62px;
+    height: 62px;
+  }
+  .tactil-btn.t-e {
+    right: 26px;
+    bottom: 108px;
+    width: 56px;
+    height: 56px;
+  }
+  .tactil-btn.t-q {
+    right: 100px;
+    bottom: 84px;
+    width: 50px;
+    height: 50px;
+  }
+  .tactil-btn.t-g {
+    right: 96px;
+    bottom: 142px;
+    width: 46px;
+    height: 46px;
+  }
+  .tactil-btn.t-ping,
+  .tactil-btn.t-mapa,
+  .tactil-btn.t-chat,
+  .tactil-btn.t-mejora {
+    top: calc(env(safe-area-inset-top, 0px) + 92px);
+    width: 40px;
+    height: 40px;
+    font-size: 17px;
+  }
+  .tactil-btn.t-ping {
+    right: 12px;
+  }
+  .tactil-btn.t-mapa {
+    right: 58px;
+  }
+  .tactil-btn.t-chat {
+    right: 104px;
+  }
+  .tactil-btn.t-mejora {
+    right: 150px;
+  }
+  .tactil-zona.der {
+    right: 180px;
+  }
+}
+
+/* Menú en móvil horizontal: logo más pequeño para que se vean los botones sin desplazar */
+@media (max-height: 520px) {
+  .menu-screen {
+    padding: 14px 20px;
+  }
+  .menu-content {
+    margin: 0;
+  }
+  .menu-logo {
+    max-height: 120px;
+  }
+  .menu-tagline {
+    margin-bottom: 10px;
+  }
+  .menu-screen .menu-action {
+    min-height: 34px;
+    padding: 7px 14px;
+  }
+}
+
+/* Si el contenido no cabe en alto (móvil horizontal), se centra sin cortar la parte de arriba. */
+.pantalla:not(.menu-screen),
+.menu-screen.lobby-screen {
+  align-items: safe center;
+}
+
+/* La pantalla de fin queda por encima de los controles táctiles y cabe en móvil horizontal. */
+.fin {
+  z-index: 8;
+}
+@media (max-height: 520px) {
+  .fin .caja {
+    padding: 12px 16px;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+  }
+  .fin .titulo {
+    font-size: clamp(30px, 8vh, 48px);
+  }
+  .fin .ayuda {
+    font-size: 13px !important;
+    margin: 4px 0;
+  }
+  .fin .tabla {
+    margin: 6px 0;
+    font-size: 13px;
+  }
+  .fin .tabla td,
+  .fin .tabla th {
+    padding: 2px 4px;
+  }
+}

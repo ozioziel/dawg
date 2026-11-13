@@ -82,6 +82,10 @@ export const sfx = {
     else if (k === "rayo_franco") tono(1800, 100, 0.25, "sawtooth", v * 1.5);
     else if (k === "red_proy") ruido(0.2, v, 600);
     else if (k.startsWith("frasco")) tono(500, 900, 0.12, "triangle", v);
+    else if (k === "espina") tono(1400, 700, 0.06, "triangle", v);
+    else if (k === "fragmento") tono(300, 150, 0.08, "sine", v * 1.4);
+    else if (k === "rayo_laser") tono(2800, 200, 0.35, "sawtooth", v * 1.6);
+    else if (k === "misil" || k === "granada") tono(300, 600, 0.3, "sawtooth", v);
   },
   impacto(): void {
     if (limitar("imp", 50)) return;
@@ -92,9 +96,65 @@ export const sfx = {
     ruido(0.6, 0.5, 500);
     tono(120, 40, 0.5, "sine", 0.4);
   },
-  hielo(): void {
-    tono(2000, 3000, 0.25, "triangle", 0.12);
-    tono(2600, 1800, 0.3, "sine", 0.08, 0.05);
+  hielo(vol = 1, delay = 0): void {
+    if (limitar("hielo" + delay, 60)) return;
+    tono(2000, 3000, 0.25, "triangle", 0.12 * vol, delay);
+    tono(2600, 1800, 0.3, "sine", 0.08 * vol, 0.05 + delay);
+  },
+  tajo(): void {
+    if (limitar("tajo", 60)) return;
+    ruido(0.08, 0.14, 4000);
+    tono(1800, 600, 0.07, "sawtooth", 0.06);
+  },
+  /** Mordida húmeda y crujiente. */
+  mordida(): void {
+    ruido(0.12, 0.22, 1400);
+    tono(160, 70, 0.18, "square", 0.12, 0.02);
+  },
+  teleport(): void {
+    tono(1600, 200, 0.22, "sine", 0.14);
+    tono(200, 1600, 0.18, "triangle", 0.08, 0.12);
+  },
+  /** Escarabajo: chasquidos irregulares y crujidos incómodos. */
+  escarabajo(fuerte = false): void {
+    if (limitar("esc", 90)) return;
+    for (let i = 0; i < (fuerte ? 7 : 4); i++) {
+      const d = i * (0.03 + Math.random() * 0.05);
+      tono(2600 + Math.random() * 1800, 900, 0.025, "square", 0.07, d);
+      ruido(0.03, 0.1, 3000 + Math.random() * 3000, d + 0.01);
+    }
+    if (fuerte) tono(90, 45, 0.4, "sawtooth", 0.18);
+  },
+  /** Simbionte: sonido viscoso y burbujeante. */
+  simbionte(fuerte = false): void {
+    if (limitar("sim", 110)) return;
+    for (let i = 0; i < 3; i++) tono(180 + Math.random() * 120, 60 + Math.random() * 40, 0.12, "sine", fuerte ? 0.2 : 0.11, i * 0.06);
+    ruido(0.18, 0.08, 500);
+  },
+  curar(): void {
+    [523, 784, 1046].forEach((f, i) => tono(f, f * 1.02, 0.18, "sine", 0.1, i * 0.06));
+  },
+  escaneo(): void {
+    tono(900, 1800, 0.6, "sine", 0.08);
+  },
+  rugido(): void {
+    ruido(0.5, 0.25, 700);
+    tono(110, 60, 0.6, "sawtooth", 0.2);
+  },
+  singularidad(): void {
+    tono(60, 400, 1.6, "sine", 0.2);
+    tono(800, 60, 2.2, "triangle", 0.08, 0.2);
+  },
+  eclipse(): void {
+    tono(220, 55, 1.4, "sawtooth", 0.14);
+    tono(330, 82, 1.4, "sine", 0.12, 0.1);
+  },
+  laser(): void {
+    tono(3000, 200, 0.4, "sawtooth", 0.16);
+  },
+  /** Robot cazador: zumbido metálico rápido. */
+  cazador(): void {
+    for (let i = 0; i < 6; i++) tono(400 + i * 120, 300, 0.04, "square", 0.08, i * 0.04);
   },
   chapoteo(): void {
     ruido(0.25, 0.15, 900);
