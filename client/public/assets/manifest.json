@@ -52,76 +52,748 @@
       "frame": 128
     },
     "curandera": {
-      "frame": 128
+      "frame": 128,
+      "cols": 15,
+      "anims": {
+        "quieto": [
+          0,
+          1
+        ],
+        "caminar": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "atacar": [
+          8,
+          9,
+          10
+        ],
+        "habilidad": [
+          11,
+          12,
+          13
+        ],
+        "golpe": [
+          14
+        ]
+      }
     },
     "skin1curandera": {
-      "frame": 128
+      "frame": 128,
+      "cols": 15,
+      "anims": {
+        "quieto": [
+          0,
+          1
+        ],
+        "caminar": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "atacar": [
+          8,
+          9,
+          10
+        ],
+        "habilidad": [
+          11,
+          12,
+          13
+        ],
+        "golpe": [
+          14
+        ]
+      }
     },
     "vesper": {
-      "frame": 128
+      "frame": 128,
+      "cols": 15,
+      "anims": {
+        "quieto": [
+          0,
+          1
+        ],
+        "caminar": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "atacar": [
+          8,
+          9,
+          10
+        ],
+        "habilidad": [
+          11,
+          12,
+          13
+        ],
+        "golpe": [
+          14
+        ]
+      }
     },
     "skin1vesper": {
-      "frame": 128
+      "frame": 128,
+      "cols": 15,
+      "anims": {
+        "quieto": [
+          0,
+          1
+        ],
+        "caminar": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "atacar": [
+          8,
+          9,
+          10
+        ],
+        "habilidad": [
+          11,
+          12,
+          13
+        ],
+        "golpe": [
+          14
+        ]
+      }
     },
     "freeze": {
-      "frame": 128
+      "frame": 128,
+      "cols": 15,
+      "anims": {
+        "quieto": [
+          0,
+          1
+        ],
+        "caminar": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "atacar": [
+          8,
+          9,
+          10
+        ],
+        "habilidad": [
+          11,
+          12,
+          13
+        ],
+        "golpe": [
+          14
+        ]
+      }
     },
     "skin1freeze": {
-      "frame": 128
+      "frame": 128,
+      "cols": 15,
+      "anims": {
+        "quieto": [
+          0,
+          1
+        ],
+        "caminar": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "atacar": [
+          8,
+          9,
+          10
+        ],
+        "habilidad": [
+          11,
+          12,
+          13
+        ],
+        "golpe": [
+          14
+        ]
+      }
     },
     "escarabajo": {
-      "frame": 128
+      "frame": 128,
+      "cols": 15,
+      "anims": {
+        "quieto": [
+          0,
+          1
+        ],
+        "caminar": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "atacar": [
+          8,
+          9,
+          10
+        ],
+        "habilidad": [
+          11,
+          12,
+          13
+        ],
+        "golpe": [
+          14
+        ]
+      }
     },
     "skin1escarabajo": {
-      "frame": 128
+      "frame": 128,
+      "cols": 15,
+      "anims": {
+        "quieto": [
+          0,
+          1
+        ],
+        "caminar": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "atacar": [
+          8,
+          9,
+          10
+        ],
+        "habilidad": [
+          11,
+          12,
+          13
+        ],
+        "golpe": [
+          14
+        ]
+      }
     },
     "simbionte": {
-      "frame": 128
+      "frame": 128,
+      "cols": 15,
+      "anims": {
+        "quieto": [
+          0,
+          1
+        ],
+        "caminar": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "atacar": [
+          8,
+          9,
+          10
+        ],
+        "habilidad": [
+          11,
+          12,
+          13
+        ],
+        "golpe": [
+          14
+        ]
+      }
     },
     "skin1simbionte": {
-      "frame": 128
+      "frame": 128,
+      "cols": 15,
+      "anims": {
+        "quieto": [
+          0,
+          1
+        ],
+        "caminar": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "atacar": [
+          8,
+          9,
+          10
+        ],
+        "habilidad": [
+          11,
+          12,
+          13
+        ],
+        "golpe": [
+          14
+        ]
+      }
     },
     "cambiaformas_berserk": {
-      "frame": 128
+      "frame": 128,
+      "cols": 15,
+      "anims": {
+        "quieto": [
+          0,
+          1
+        ],
+        "caminar": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "atacar": [
+          8,
+          9,
+          10
+        ],
+        "habilidad": [
+          11,
+          12,
+          13
+        ],
+        "golpe": [
+          14
+        ]
+      }
     },
     "simbionte_coloso": {
-      "frame": 192
+      "frame": 192,
+      "cols": 15,
+      "anims": {
+        "quieto": [
+          0,
+          1
+        ],
+        "caminar": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "atacar": [
+          8,
+          9,
+          10
+        ],
+        "habilidad": [
+          11,
+          12,
+          13
+        ],
+        "golpe": [
+          14
+        ]
+      }
     },
     "kraken": {
-      "frame": 160
+      "frame": 160,
+      "cols": 15,
+      "anims": {
+        "quieto": [
+          0,
+          1
+        ],
+        "caminar": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "atacar": [
+          8,
+          9,
+          10
+        ],
+        "habilidad": [
+          11,
+          12,
+          13
+        ],
+        "golpe": [
+          14
+        ]
+      }
     },
     "cria": {
-      "frame": 128
+      "frame": 128,
+      "cols": 15,
+      "anims": {
+        "quieto": [
+          0,
+          1
+        ],
+        "caminar": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "atacar": [
+          8,
+          9,
+          10
+        ],
+        "habilidad": [
+          11,
+          12,
+          13
+        ],
+        "golpe": [
+          14
+        ]
+      }
     },
     "planta": {
-      "frame": 128
+      "frame": 128,
+      "cols": 15,
+      "anims": {
+        "quieto": [
+          0,
+          1
+        ],
+        "caminar": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "atacar": [
+          8,
+          9,
+          10
+        ],
+        "habilidad": [
+          11,
+          12,
+          13
+        ],
+        "golpe": [
+          14
+        ]
+      }
     },
     "robot": {
-      "frame": 128
+      "frame": 128,
+      "cols": 15,
+      "anims": {
+        "quieto": [
+          0,
+          1
+        ],
+        "caminar": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "atacar": [
+          8,
+          9,
+          10
+        ],
+        "habilidad": [
+          11,
+          12,
+          13
+        ],
+        "golpe": [
+          14
+        ]
+      }
     },
     "cazador": {
-      "frame": 128
+      "frame": 128,
+      "cols": 15,
+      "anims": {
+        "quieto": [
+          0,
+          1
+        ],
+        "caminar": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "atacar": [
+          8,
+          9,
+          10
+        ],
+        "habilidad": [
+          11,
+          12,
+          13
+        ],
+        "golpe": [
+          14
+        ]
+      }
     },
     "laser": {
-      "frame": 128
+      "frame": 128,
+      "cols": 15,
+      "anims": {
+        "quieto": [
+          0,
+          1
+        ],
+        "caminar": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "atacar": [
+          8,
+          9,
+          10
+        ],
+        "habilidad": [
+          11,
+          12,
+          13
+        ],
+        "golpe": [
+          14
+        ]
+      }
     },
     "dron": {
-      "frame": 128
+      "frame": 128,
+      "cols": 15,
+      "anims": {
+        "quieto": [
+          0,
+          1
+        ],
+        "caminar": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "atacar": [
+          8,
+          9,
+          10
+        ],
+        "habilidad": [
+          11,
+          12,
+          13
+        ],
+        "golpe": [
+          14
+        ]
+      }
     },
     "inspector": {
-      "frame": 128
+      "frame": 128,
+      "cols": 15,
+      "anims": {
+        "quieto": [
+          0,
+          1
+        ],
+        "caminar": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "atacar": [
+          8,
+          9,
+          10
+        ],
+        "habilidad": [
+          11,
+          12,
+          13
+        ],
+        "golpe": [
+          14
+        ]
+      }
     },
     "tecnico": {
-      "frame": 128
+      "frame": 128,
+      "cols": 15,
+      "anims": {
+        "quieto": [
+          0,
+          1
+        ],
+        "caminar": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "atacar": [
+          8,
+          9,
+          10
+        ],
+        "habilidad": [
+          11,
+          12,
+          13
+        ],
+        "golpe": [
+          14
+        ]
+      }
     },
     "oficial": {
-      "frame": 128
+      "frame": 128,
+      "cols": 15,
+      "anims": {
+        "quieto": [
+          0,
+          1
+        ],
+        "caminar": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "atacar": [
+          8,
+          9,
+          10
+        ],
+        "habilidad": [
+          11,
+          12,
+          13
+        ],
+        "golpe": [
+          14
+        ]
+      }
     },
     "centinela": {
-      "frame": 256
+      "frame": 256,
+      "cols": 15,
+      "anims": {
+        "quieto": [
+          0,
+          1
+        ],
+        "caminar": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "atacar": [
+          8,
+          9,
+          10
+        ],
+        "habilidad": [
+          11,
+          12,
+          13
+        ],
+        "golpe": [
+          14
+        ]
+      }
     },
     "director": {
-      "frame": 192
+      "frame": 192,
+      "cols": 15,
+      "anims": {
+        "quieto": [
+          0,
+          1
+        ],
+        "caminar": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "atacar": [
+          8,
+          9,
+          10
+        ],
+        "habilidad": [
+          11,
+          12,
+          13
+        ],
+        "golpe": [
+          14
+        ]
+      }
     }
   },
   "objetos": {
@@ -936,8 +1608,8 @@
       "frames": 1
     },
     "fragmento": {
-      "w": 22,
-      "h": 22,
+      "w": 24,
+      "h": 24,
       "frames": 1
     },
     "rayo_laser": {
@@ -988,6 +1660,16 @@
     "terminal": {
       "w": 96,
       "h": 96,
+      "frames": 1
+    },
+    "goo_trozo": {
+      "w": 40,
+      "h": 28,
+      "frames": 4
+    },
+    "goo_infeccion": {
+      "w": 128,
+      "h": 128,
       "frames": 1
     }
   },

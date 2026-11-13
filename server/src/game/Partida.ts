@@ -398,6 +398,14 @@ export class Partida {
     this.fx("alma", target.x, target.y);
   }
 
+  /** Anuncia al cliente una acción de un jugador o una unidad para que la anime. */
+  animar(id: string, tipo: string): void {
+    const e = this.state.jugadores.get(id) ?? this.state.unidades.get(id);
+    if (!e) return;
+    e.anim = tipo;
+    e.animN = (e.animN + 1) % 256;
+  }
+
   usarHabilidad(id: string, x: number, y: number, fase: "down" | "up" = "down"): void {
     const p = this.state.jugadores.get(id);
     if (!p) return;
@@ -419,8 +427,14 @@ export class Partida {
     d.habX = x;
     d.habY = y;
     // Primero los retos (interruptores, celdas, muros sobre marcas…)
-    if (this.sectores.habilidad(id, p, x, y)) return;
+    if (this.sectores.habilidad(id, p, x, y)) {
+      this.animar(id, "hab");
+      return;
+    }
+    const antes = [p.enfriamiento, p.canal, p.bajoTierra, p.controla, p.cautivo, p.energia, p.disfrazado, p.colonia, p.escudo, p.x, p.y].join("|");
     ALIEN_LOGICA[p.forma as AlienKind]?.habilidad(this, id, p, x, y);
+    const despues = [p.enfriamiento, p.canal, p.bajoTierra, p.controla, p.cautivo, p.energia, p.disfrazado, p.colonia, p.escudo, p.x, p.y].join("|");
+    if (antes !== despues) this.animar(id, "hab");
   }
 
   usarUlti(id: string, x: number, y: number): void {
@@ -431,10 +445,14 @@ export class Partida {
     if (!Number.isFinite(x) || !Number.isFinite(y)) return;
     const logica = ALIEN_LOGICA[p.forma as AlienKind];
     if (!logica) return;
-    if (logica.ultiContinua?.(this, id, p, x, y)) return;
+    if (logica.ultiContinua?.(this, id, p, x, y)) {
+      this.animar(id, "ulti");
+      return;
+    }
     if (p.ultiT > 0) return;
     if (p.ulti < 1) return this.aviso(`${ALIENS[p.forma as AlienKind].ulti.nombre} aún no está lista (${Math.floor(p.ulti * 100)}%).`, "info", id);
     if (logica.ulti(this, id, p, x, y)) {
+      this.animar(id, "ulti");
       p.ulti = 0;
       this.flags.add("ulti-usada");
     }
@@ -571,6 +589,10 @@ export class Partida {
       if (!p.vivo) return;
       // Disparo / ataque básico
       d.shootCd -= dt;
+      // Barra del ataque básico: cuando empieza un enfriamiento se apunta su duración total.
+      if (d.shootCd > p.cdBasico + 0.02) p.cdBasicoMax = d.shootCd;
+      const cd = Math.max(0, Math.round(d.shootCd * 20) / 20);
+      if (cd !== p.cdBasico) p.cdBasico = cd;
       p.disparando = false;
       if (d.shoot && this.canAct(p)) ataqueBasico(this, id, p, d, dt);
       this.updateInteract(id, p, d, dt);
@@ -1007,6 +1029,9 @@ export class Partida {
     pr.vy = Math.sin(ang) * speed;
     const id = this.id("b");
     this.state.proyectiles.set(id, pr);
+    // Quien dispara hace la animación de disparo (o de lanzar, para la Telequinesis).
+    if (o.shooter) this.animar(o.shooter, "disparo");
+    else if (o.owner) this.animar(o.owner, k.startsWith("tq_") ? "lanzar" : "disparo");
     this.projData.set(id, {
       px: x,
       py: y,
@@ -1039,6 +1064,7 @@ export class Partida {
     pr.vuelo = flight;
     const id = this.id("b");
     this.state.proyectiles.set(id, pr);
+    this.animar(owner, k === "misil" ? "misil" : "lanzar");
     this.projData.set(id, { px: x, py: y, t: 0, life: flight, damage: 0, pierce: 0, owner, hits: new Set(), explota });
     if (explota) this.addZone("aviso", tx, ty, explota.r, flight);
   }

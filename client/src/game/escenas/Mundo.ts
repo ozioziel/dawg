@@ -26,7 +26,7 @@ import { ControlesTactiles } from "../../ui/tactil";
 import { ALTURA, COLOR_ALIEN, PROF_UI_MUNDO, TEXTO, actualizarReloj, ctx, esTactil, hojaJugador, prof, type Ctx } from "../contexto";
 import { Efectos } from "../efectos";
 import { alternarSonido, sfx } from "../sonido";
-import { VistaPersonaje } from "../vistas";
+import { VistaPersonaje, perfilDe } from "../vistas";
 
 const TICK_MS = TICK_DT * 1000;
 
@@ -47,6 +47,10 @@ const DECOR_ORIGEN: Record<string, number> = { holograma: 0.72, nucleo: 0.7, mes
 const PLANOS = new Set(["hueco", "ranura", "rejilla", "plataforma", "marca_inicio", "marca_muro", "grieta", "placa", "entrada_galeria", "suelo_blando", "lector", "biometrica", "baldosa", "marca_slot", "meta", "railes", "cinta", "conducto", "raiz", "soporte", "pasarela_hielo", "anillo", "aro_zona", "respiradero", "fuga"]);
 /** Unidades que se dibujan como imagen fija. */
 const ESTATICAS = new Set(["torreta", "sensor", "generador", "nodo", "pilon", "terminal"]);
+/** Color del fogonazo al disparar, por alien o tipo de enemigo. */
+const FOGONAZO: Record<string, number> = { cambiaformas: 0xffe08a, delmar: 0x6fd6ff, inteligente: 0xc08bff, curandera: 0x9cff7a, simbionte: 0xff8a2a, laser: 0x7dff6a, francotirador: 0xfff4a0, director: 0xff5a4a, robot: 0xffb020, dron: 0xffd23e };
+/** Color del rastro de chicle de cada masa. */
+const GOO_COLOR: Record<string, number> = { simbionte: 0xb9501a, skin1simbionte: 0x7a1830, simbionte_coloso: 0xa8461a, cria: 0xb9501a };
 const ESCALA_UNIDAD: Record<string, number> = { pulpo: 0.75, perro: 0.85, cria: 0.85, planta: 0.95, dron: 0.8, kraken: 1, cazador: 1.05, robot: 1.05 };
 const ZONA_TEX: Record<string, string> = { eco: "zona_eco", jardin: "zona_jardin", singularidad: "zona_singularidad", electrico: "zona_electrico", aviso: "zona_aviso", vapor: "zona_vapor" };
 
@@ -74,6 +78,12 @@ export class Mundo extends Phaser.Scene {
   private vJug = new Map<string, VistaPersonaje>();
   private vExtra = new Map<string, { burbuja?: Phaser.GameObjects.Image; monticulo?: Phaser.GameObjects.Sprite; icono?: Phaser.GameObjects.Image; aura?: Phaser.GameObjects.Image }>();
   private vUni = new Map<string, VistaPersonaje>();
+  /** Último contador de acción visto por entidad (para animar cada acción una vez). */
+  private animVisto = new Map<string, number>();
+  /** Distancia recorrida por entidad (pisadas, rastro de goo, raíces). */
+  private recorrido = new Map<string, { x: number; y: number; d: number }>();
+  private inicioMundo = 0;
+  private vivoAntes = new Map<string, boolean>();
   private vEtiqueta = new Map<string, Phaser.GameObjects.Text>();
   private vSimple = new Map<string, Phaser.GameObjects.Image>();
   private vProy = new Map<string, VistaProyectil>();
@@ -122,6 +132,7 @@ export class Mundo extends Phaser.Scene {
     this.ajustarZoom();
     this.scale.on("resize", () => this.ajustarZoom());
     this.efectos = new Efectos(this);
+    this.inicioMundo = this.time.now;
     this.gSuelo = this.add.graphics().setDepth(4);
     this.gLaser = this.add.graphics().setDepth(PROF_UI_MUNDO - 10).setBlendMode(Phaser.BlendModes.ADD);
     this.gMundo = this.add.graphics().setDepth(PROF_UI_MUNDO - 20);
@@ -488,6 +499,12 @@ export class Mundo extends Phaser.Scene {
         this.vExtra.set(id, {});
       }
       const ex = this.vExtra.get(id)!;
+      const estabaVivo = this.vivoAntes.get(id);
+      if (estabaVivo && !p.vivo) {
+        this.efectos.muerte(v.rx, v.ry, v.perfil, COLOR_ALIEN[p.forma] ?? 0xffffff);
+        if (yo) this.cameras.main.shake(260, 0.01);
+      }
+      this.vivoAntes.set(id, p.vivo);
       if (yo) {
         v.rx = this.render.x;
         v.ry = this.render.y;
@@ -503,11 +520,23 @@ export class Mundo extends Phaser.Scene {
       else if (p.punal > 0) v.cuerpo.setTint(0xc8b0ff);
       else v.cuerpo.clearTint();
       v.setOverlay(p.estado === "congelado" ? "hielo" : p.estado === "red" ? "red_trampa" : null);
-      v.setAura(Boolean(p.controla) || p.punal > 0, p.punal > 0 ? 0x7a5cff : 0xc08bff);
-      v.actualizar(yo ? this.aim : p.aim, null, dt, fantasma ? undefined : p.hp, p.maxHp);
-      if (fantasma) v.cuerpo.y -= 10 + Math.sin(this.time.now / 300) * 4;
-      if (p.forma === "simbionte" && p.ultiT > 0) v.cuerpo.setScale(v.escala * (1 + Math.sin(this.time.now / 160) * 0.03));
-      else v.cuerpo.setScale(v.escala);
+      v.setAura(Boolean(p.controla) || p.punal > 0 || (p.ultiT > 0 && p.forma !== "simbionte"), p.punal > 0 ? 0x7a5cff : p.controla ? 0xc08bff : COLOR_ALIEN[p.forma] ?? 0xffffff);
+      v.quieto = p.estado === "congelado" || p.estado === "red";
+      v.aturdido = p.estado === "aturdido";
+      v.extraY = fantasma ? -(10 + Math.sin(this.time.now / 300) * 4) : 0;
+      v.extraEscala = p.forma === "simbionte" && p.ultiT > 0 ? 1 + Math.sin(this.time.now / 160) * 0.03 : 1;
+      const apunta = yo ? this.aim : p.aim;
+      // Acción nueva anunciada por el servidor → animación + efecto
+      const visto = this.animVisto.get(id);
+      if (visto !== undefined && visto !== p.animN && p.anim && !fantasma) {
+        v.accion(p.anim, apunta);
+        const col = COLOR_ALIEN[p.forma] ?? 0xffffff;
+        if (p.anim === "disparo") this.efectos.fogonazo(v.rx, v.ry, apunta, FOGONAZO[p.forma] ?? col);
+        else this.efectos.accion(p.anim, v.rx, v.ry, col);
+      }
+      this.animVisto.set(id, p.animN);
+      v.actualizar(apunta, null, dt, fantasma ? undefined : p.hp, p.maxHp);
+      if (!fantasma && !p.bajoTierra && p.vivo) this.rastro(id, v, hoja);
       // Escudo (psíquico o de la Fusión)
       if (p.escudo > 0) {
         if (!ex.burbuja) ex.burbuja = this.add.image(0, 0, "burbuja").setAlpha(0.8);
@@ -543,11 +572,14 @@ export class Mundo extends Phaser.Scene {
         if (this.chorroT <= 0) {
           this.chorroT = 0.03;
           this.efectos.chorro(v.rx, v.ry - ALTURA, yo ? this.aim : p.aim);
+          if (Math.random() < 0.15) v.accion("disparo", yo ? this.aim : p.aim);
         }
       }
     });
     for (const [id, v] of this.vJug) {
       if (vivos.has(id)) continue;
+      this.animVisto.delete(id);
+      this.recorrido.delete(id);
       v.destruir();
       const ex = this.vExtra.get(id);
       ex?.burbuja?.destroy();
@@ -557,6 +589,27 @@ export class Mundo extends Phaser.Scene {
       this.vExtra.delete(id);
     }
     void me;
+  }
+
+  /** Pisadas, trozos de goo o tierra según cómo se mueve cada cuerpo. */
+  private rastro(id: string, v: VistaPersonaje, hoja: string): void {
+    let r = this.recorrido.get(id);
+    if (!r) {
+      this.recorrido.set(id, { x: v.rx, y: v.ry, d: 0 });
+      return;
+    }
+    const d = Math.hypot(v.rx - r.x, v.ry - r.y);
+    r.x = v.rx;
+    r.y = v.ry;
+    if (d > 60) return;
+    r.d += d;
+    const perfil = v.perfil;
+    const umbral = perfil === "masa" ? 30 : perfil === "planta" ? 36 : perfil === "cuadrupedo" ? 30 : perfil === "flotante" || perfil === "tentaculos" ? 1e9 : 44;
+    if (r.d < umbral) return;
+    r.d = 0;
+    if (perfil === "masa") this.efectos.rastroGoo(v.rx, v.ry, GOO_COLOR[hoja] ?? 0xb9501a, hoja === "simbionte_coloso" ? 1.5 : hoja === "cria" ? 0.6 : 1);
+    else if (perfil === "planta") this.efectos.raices(v.rx, v.ry);
+    else this.efectos.pisada(v.rx, v.ry, perfil === "maquina" || perfil === "pesado");
   }
 
   // ------------------------------------------------------------------ unidades
@@ -571,9 +624,9 @@ export class Mundo extends Phaser.Scene {
         return;
       }
       let v = this.vUni.get(id);
-      if (!v || v.cuerpo.texture.key !== u.t) {
+      if (!v || v.cuerpo.texture.key !== (this.textures.exists(u.t) ? u.t : "fusilero")) {
         v?.destruir();
-        v = new VistaPersonaje(this, this.textures.exists(u.t) ? u.t : "fusilero", u.x, u.y, { escala: ESCALA_UNIDAD[u.t] ?? 1 });
+        v = new VistaPersonaje(this, this.textures.exists(u.t) ? u.t : "fusilero", u.x, u.y, { escala: ESCALA_UNIDAD[u.t] ?? 1, aparecer: this.time.now - this.inicioMundo > 2500 });
         this.vUni.set(id, v);
       }
       v.seguir(u.x, u.y, dt);
@@ -582,21 +635,29 @@ export class Mundo extends Phaser.Scene {
       // Tintes de estado
       const pulso = 0.5 + 0.5 * Math.sin(this.time.now / 120);
       if (u.st === "congelado") v.cuerpo.setTint(0x9fe3ff);
-      else if (u.st === "infectado") v.cuerpo.setTint(Phaser.Display.Color.GetColor(220, 90 + pulso * 80, 240));
-      else if (u.poseido === "S") v.cuerpo.setTint(0xe6a8ff);
+      else if (u.st === "infectado") v.cuerpo.setTint(Phaser.Display.Color.GetColor(255, 150 + pulso * 70, 90 + pulso * 50));
+      else if (u.poseido === "S") v.cuerpo.setTint(0xffc08a);
       else if (u.st === "aturdido") v.cuerpo.setTint(0x9aa0ff);
       else if (u.st === "enfriado") v.cuerpo.setTint(0x8fd8ff);
       else if (u.st === "cargando") v.cuerpo.setTint(pulso > 0.5 ? 0xff8a8a : 0xffffff);
       else if (u.frio > 0.05) v.cuerpo.setTint(Phaser.Display.Color.GetColor(255 - u.frio * 110, 255 - u.frio * 40, 255));
       else v.cuerpo.clearTint();
-      v.setOverlay(u.st === "congelado" ? "hielo" : null);
+      v.setOverlay(u.st === "congelado" ? "hielo" : u.st === "infectado" || u.poseido === "S" ? "goo_infeccion" : null);
+      v.quieto = u.st === "congelado";
+      v.aturdido = u.st === "aturdido";
       const jefe = enemyDef(u.t)?.rango === "jefe";
-      v.actualizar(u.ang, u.moviendo, dt, jefe || u.t === "planta" ? undefined : u.hp, u.maxHp);
-      // Barras de infección y frío
-      if (u.infeccion > 0 && u.team === "humanos") {
-        const top = v.ry - 92 * v.escala + 6;
-        v.barra.fillStyle(0x000000, 0.8).fillRect(v.rx - 22, top, 44, 4).fillStyle(0xd36be8).fillRect(v.rx - 22, top, 44 * u.infeccion, 4);
+      const vistoU = this.animVisto.get(id);
+      if (vistoU !== undefined && vistoU !== u.animN && u.anim) {
+        v.accion(u.anim, u.ang);
+        if (u.anim === "disparo") this.efectos.fogonazo(v.rx, v.ry, u.ang, FOGONAZO[u.t] ?? (u.team === "aliens" ? 0xffb26a : 0xffd23e));
+        else this.efectos.accion(u.anim, v.rx, v.ry, u.team === "aliens" ? 0x7dff6a : 0xff6a4a);
       }
+      this.animVisto.set(id, u.animN);
+      if (u.st === "cargando" && Math.random() < 0.3) this.efectos.accion("carga", v.rx, v.ry, 0xffffff);
+      v.actualizar(u.ang, u.moviendo, dt, jefe || u.t === "planta" ? undefined : u.hp, u.maxHp);
+      this.rastro(id, v, u.t);
+      // Barra de infección del Simbionte: se llena con cada fragmento; llena = se puede asimilar
+      if (u.team === "humanos" && (u.infeccion > 0 || u.st === "infectado")) v.barraExtra(u.st === "infectado" ? 1 : u.infeccion, 0xff8a2a, 1, u.st === "infectado");
       this.etiqueta(id, u, v.ry - 100 * v.escala);
       // Láseres de apuntado
       if (u.st === "apuntando") {
@@ -606,10 +667,18 @@ export class Mundo extends Phaser.Scene {
       // Láser giratorio del Centinela
       if (u.t === "centinela" && u.st !== "enfriado" && u.st !== "congelado") this.rayo(u.x, u.y, u.ang, 620, 0xff3030, 6, 0.85);
     });
+    let bajas = 0;
+    for (const id of this.vUni.keys()) if (!vistas.has(id)) bajas++;
     for (const [id, v] of this.vUni) {
       if (!vistas.has(id)) {
-        v.destruir();
+        // Muerte animada (si desaparecen muchas de golpe, p. ej. al reiniciar, se quitan sin más)
+        if (bajas <= 8 && !v.muriendo) {
+          this.efectos.muerte(v.rx, v.ry, v.perfil);
+          v.morir();
+        } else v.destruir();
         this.vUni.delete(id);
+        this.animVisto.delete(id);
+        this.recorrido.delete(id);
       }
     }
     for (const [id, img] of this.vSimple) {
@@ -634,7 +703,14 @@ export class Mundo extends Phaser.Scene {
       if (u.t === "torreta") this.vSimple.set(id + ":c", this.add.image(u.x, u.y - 24, "torreta_canon").setOrigin(0.25, 0.5).setDepth(prof(u.y) + 1));
     }
     img.setPosition(u.x, u.y);
-    this.vSimple.get(id + ":c")?.setRotation(u.ang);
+    const canon = this.vSimple.get(id + ":c");
+    canon?.setRotation(u.ang);
+    const vistoT = this.animVisto.get(id);
+    if (canon && vistoT !== undefined && vistoT !== u.animN && u.anim === "disparo") {
+      this.efectos.fogonazo(u.x, u.y + ALTURA - 24, u.ang, 0xffd23e);
+      this.tweens.add({ targets: canon, x: u.x - Math.cos(u.ang) * 6, y: u.y - 24 - Math.sin(u.ang) * 6, duration: 50, yoyo: true });
+    }
+    this.animVisto.set(id, u.animN);
     if (u.t === "sensor") img.setScale(1 + Math.sin(this.time.now / 200) * 0.05);
     if (u.t === "nodo") img.setTint(Phaser.Display.Color.GetColor(255 - u.infeccion * 60, 255 - u.infeccion * 160, 255));
     if (u.t === "generador" || u.t === "pilon") img.setAlpha(u.blindado ? 0.6 + Math.sin(this.time.now / 80) * 0.3 : 1);
@@ -687,12 +763,14 @@ export class Mundo extends Phaser.Scene {
         const gx = pr.x + (pr.tx - pr.x) * k;
         const gy = pr.y + (pr.ty - pr.y) * k;
         v.img.setPosition(gx, gy - Math.sin(Math.PI * k) * 90 - 20 * (1 - k)).setRotation(pr.k === "misil" ? Math.atan2(pr.ty - pr.y, pr.tx - pr.x) : t * 10).setDepth(prof(gy) + 50);
+        if (pr.k === "misil" && this.game.loop.frame % 2 === 0) this.efectos.estela("misil", v.img.x, v.img.y);
         v.sombra?.setPosition(gx, gy).setDepth(prof(gy) - 40);
       } else {
         const x = pr.x + pr.vx * t;
         const y = pr.y + pr.vy * t;
         v.img.setPosition(x, y - ALTURA).setDepth(prof(y) + 20);
         if (pr.k.startsWith("tq_")) v.img.rotation += 0.3;
+        else if (this.game.loop.frame % 2 === 0) this.efectos.estela(pr.k, x, y - ALTURA);
       }
     });
     for (const [id, v] of this.vProy) {
@@ -709,7 +787,7 @@ export class Mundo extends Phaser.Scene {
     if (!this.textures.exists(k)) k = "bala";
     const img = this.add.image(pr.x, pr.y, k).setRotation(Math.atan2(pr.vy, pr.vx));
     if (pr.k.startsWith("tq_")) img.setScale(0.8).setTint(0xe0c8ff);
-    if (["bala", "bala_roja", "energia", "psiquico", "rayo_franco", "rayo_laser", "fragmento"].includes(pr.k)) img.setBlendMode(Phaser.BlendModes.ADD);
+    if (["bala", "bala_roja", "energia", "psiquico", "rayo_franco", "rayo_laser"].includes(pr.k)) img.setBlendMode(Phaser.BlendModes.ADD);
     let sombra: Phaser.GameObjects.Image | undefined;
     if (pr.vuelo > 0) sombra = this.add.image(pr.x, pr.y, "sombra").setScale(0.35);
     return { img, sombra, t0 };

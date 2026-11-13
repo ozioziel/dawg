@@ -70,6 +70,12 @@ export class Player extends Schema {
   @type("uint16") curado = 0;
   @type("uint8") rescates = 0;
   @type("uint16") apoyo = 0;
+  /** Enfriamiento del ataque básico (restante y total) para la barra del HUD. */
+  @type("float32") cdBasico = 0;
+  @type("float32") cdBasicoMax = 0;
+  /** Última acción para animar en el cliente (disparo, tajo, hab, ulti…) y su contador. */
+  @type("string") anim = "";
+  @type("uint8") animN = 0;
 }
 
 /** Enemigos, aliados (pulpos, krakens, huéspedes, plantas), dispositivos y NPC. */
@@ -98,6 +104,9 @@ export class Unit extends Schema {
   @type("uint8") fase = 0;
   /** Etiqueta visible (NPC de retos: «Inspector», «Ancla»…). */
   @type("string") etiqueta = "";
+  /** Última acción para animar en el cliente (disparo, lanzar, mordida…) y su contador. */
+  @type("string") anim = "";
+  @type("uint8") animN = 0;
 }
 
 export class Projectile extends Schema {

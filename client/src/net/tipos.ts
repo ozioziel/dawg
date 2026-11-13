@@ -62,6 +62,10 @@ export interface PlayerS {
   curado: number;
   rescates: number;
   apoyo: number;
+  cdBasico: number;
+  cdBasicoMax: number;
+  anim: string;
+  animN: number;
 }
 
 export interface UnitS {
@@ -84,6 +88,8 @@ export interface UnitS {
   frio: number;
   fase: number;
   etiqueta: string;
+  anim: string;
+  animN: number;
 }
 
 export interface ProjectileS {

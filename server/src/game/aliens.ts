@@ -59,6 +59,7 @@ export function ataqueBasico(g: Partida, id: string, p: Player, d: PData, dt: nu
     const bz = HAB.cambiaformas.berserk;
     d.shootCd = bz.cooldown;
     const dano = bz.damage * (1 + (s.dano ?? 0)) * (1 + (s.berserkDano ?? 0));
+    g.animar(id, "garra");
     const golpes = golpeCuerpo(g, id, p, bz.range, 110, 3, () => dano);
     if (golpes > 0) g.curarJugador(id, p, dano * golpes * (bz.lifesteal + (s.berserkRobo ?? 0)), "");
     g.fx("tajo", p.x + Math.cos(p.aim) * 40, p.y + Math.sin(p.aim) * 40, { c: 0x9cff5a, r: p.aim });
@@ -94,6 +95,7 @@ export function ataqueBasico(g: Partida, id: string, p: Player, d: PData, dt: nu
     if (d.shootCd > 0) return;
     if (f === "escarabajo") {
       d.shootCd = Math.max(3, a.cooldown * (1 - (s.mordidaCd ?? 0)));
+      g.animar(id, "mordida");
       const n = golpeCuerpo(g, id, p, a.range, a.arco, 1, (u) => {
         const r = rangoDe(u.t);
         if (r === "normal" || r === "npc") return u.hp + 999; // ejecuta
@@ -105,6 +107,7 @@ export function ataqueBasico(g: Partida, id: string, p: Player, d: PData, dt: nu
     }
     // Vesper: cuchillo
     d.shootCd = a.cooldown * (1 - Math.min(0.4, s.cadencia ?? 0));
+    g.animar(id, "tajo");
     const base = a.damage * (1 + (s.dano ?? 0));
     golpeCuerpo(g, id, p, a.range, a.arco, 1, (u) => {
       if (p.punal > 0) {

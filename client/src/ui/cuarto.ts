@@ -11,6 +11,13 @@ const ENVIO_MS = 60;
 
 type Dir = "down" | "up" | "side";
 
+/** Hojas animadas (3 filas × `cols`) según el manifiesto; las demás son tiras de 9 cuadros. */
+let HOJAS: Record<string, { cols?: number; anims?: Record<string, number[]> }> = {};
+fetch("assets/manifest.json")
+  .then((r) => r.json())
+  .then((m: { personajes: typeof HOJAS }) => (HOJAS = m.personajes ?? {}))
+  .catch(() => undefined);
+
 interface Figura {
   el: HTMLElement;
   cuerpo: HTMLElement;
@@ -73,14 +80,25 @@ export function crearCuarto(room: SalaLobby): { el: HTMLElement; destroy: () => 
     const ancho = el.clientWidth || 600;
     const prof = (f.y - LOBBY_BOUNDS.minY) / (LOBBY_BOUNDS.maxY - LOBBY_BOUNDS.minY);
     const lado = ancho * (0.13 + 0.06 * clamp(prof, 0, 1));
-    const base = f.dir === "down" ? 0 : f.dir === "up" ? 3 : 6;
-    const frame = base + (f.mov ? PASOS[Math.floor(t / 125) % PASOS.length]! : 0);
+    const info = HOJAS[f.kind];
+    if (info?.cols && info.anims) {
+      const fila = f.dir === "down" ? 0 : f.dir === "up" ? 1 : 2;
+      const lista = (f.mov ? info.anims.caminar : info.anims.quieto) ?? [0];
+      const fps = f.mov ? 11 : 3;
+      const col = lista[Math.floor(t / (1000 / fps)) % lista.length] ?? 0;
+      f.cuerpo.style.backgroundSize = `${info.cols * 100}% 300%`;
+      f.cuerpo.style.backgroundPosition = `${(col / (info.cols - 1)) * 100}% ${fila * 50}%`;
+    } else {
+      const base = f.dir === "down" ? 0 : f.dir === "up" ? 3 : 6;
+      const frame = base + (f.mov ? PASOS[Math.floor(t / 125) % PASOS.length]! : 0);
+      f.cuerpo.style.backgroundSize = `${FRAMES * 100}% 100%`;
+      f.cuerpo.style.backgroundPosition = `${(frame / (FRAMES - 1)) * 100}% 0`;
+    }
     f.el.style.left = `${f.x * 100}%`;
     f.el.style.top = `${f.y * 100}%`;
     f.el.style.zIndex = String(Math.round(f.y * 1000));
     f.cuerpo.style.width = `${lado}px`;
     f.cuerpo.style.height = `${lado}px`;
-    f.cuerpo.style.backgroundPosition = `${(frame / (FRAMES - 1)) * 100}% 0`;
     f.cuerpo.style.transform = f.dir === "side" && f.izq ? "scaleX(-1)" : "none";
   };
 

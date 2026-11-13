@@ -7,7 +7,8 @@ import { TITULO, ctx } from "../contexto";
 export const ANIMS_DIRS = ["down", "up", "side"] as const;
 
 interface Manifest {
-  personajes: Record<string, { frame: number }>;
+  /** Hojas animadas: `cols` cuadros por fila (abajo, arriba, lado) y los cuadros de cada acción. */
+  personajes: Record<string, { frame: number; cols?: number; anims?: Record<string, number[]> }>;
   objetos: Record<string, { w: number; h: number; frames: number }>;
 }
 
@@ -43,14 +44,30 @@ export class Carga extends Phaser.Scene {
   }
 
   create(): void {
-    // Animaciones de caminar: [paso1, quieto, paso2, quieto] por dirección.
     const m = this.cache.json.get("manifest") as Manifest;
-    for (const name of Object.keys(m.personajes)) {
+    for (const [name, info] of Object.entries(m.personajes)) {
+      const rapido = /perro|cazador|escarabajo|cria|dron/.test(name);
+      const lento = /simbionte|coloso|centinela|kraken/.test(name);
       ANIMS_DIRS.forEach((dir, d) => {
+        if (info.cols && info.anims) {
+          // Hoja animada: una animación por acción y dirección.
+          for (const [anim, cuadros] of Object.entries(info.anims)) {
+            const fps: Record<string, number> = { quieto: lento ? 2.5 : 3, caminar: rapido ? 15 : lento ? 8 : 11, atacar: 16, habilidad: 11, golpe: 10 };
+            this.anims.create({
+              key: `${name}-${dir}-${anim}`,
+              frames: cuadros.map((c) => ({ key: name, frame: d * info.cols! + c })),
+              frameRate: fps[anim] ?? 10,
+              repeat: anim === "quieto" || anim === "caminar" ? -1 : 0,
+              yoyo: anim === "quieto",
+            });
+          }
+          return;
+        }
+        // Hojas de 9 cuadros (arte del equipo): caminar = [paso1, quieto, paso2, quieto].
         this.anims.create({
           key: `${name}-${dir}-caminar`,
           frames: [1, 0, 2, 0].map((f) => ({ key: name, frame: d * 3 + f })),
-          frameRate: name === "perro" || name === "cazador" || name === "escarabajo" || name === "skin1escarabajo" ? 13 : name === "dron" ? 16 : 8,
+          frameRate: rapido ? 13 : 8,
           repeat: -1,
         });
       });

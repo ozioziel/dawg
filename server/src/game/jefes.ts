@@ -45,6 +45,7 @@ function jefeLaboratorio(g: Partida, uid: string, u: Unit, b: Brain, dt: number,
   b.t2 += dt;
   if (b.t2 >= intervalo(g, tn.reinforceEvery)) {
     b.t2 = 0;
+    g.animar(uid, "rugido");
     g.director.spawnNear(g.k >= 3 ? ["fusilero", "escudo", "medico"] : ["fusilero", "medico"], u.x, u.y, "jefe");
     g.aviso("¡El Jefe llamó refuerzos!", "peligro");
   }
@@ -142,6 +143,7 @@ function centinela(g: Partida, uid: string, u: Unit, b: Brain, dt: number, solid
   j.drones -= dt;
   if (j.drones <= 0) {
     j.drones = intervalo(g, tn.droneEvery);
+    g.animar(uid, "rugido");
     g.director.spawnNear(g.k >= 3 ? ["dron", "dron"] : ["dron"], u.x, u.y, "jefe");
   }
   // Embestida
@@ -150,6 +152,7 @@ function centinela(g: Partida, uid: string, u: Unit, b: Brain, dt: number, solid
     j.carga = 1.1;
     j.cargaAng = toT;
     u.st = "cargando";
+    g.animar(uid, "carga");
     g.fx("texto", u.x, u.y, { s: "¡EMBISTE!", c: 0xff4a4a });
   }
 }
@@ -251,6 +254,7 @@ function director(g: Partida, uid: string, u: Unit, b: Brain, dt: number, solids
   j.rejilla -= dt;
   if (j.rejilla <= 0) {
     j.rejilla = intervalo(g, tn.gridEvery) * rapido;
+    g.animar(uid, "pisoton");
     const sala = g.world.roomAt(u.x, u.y);
     if (sala) {
       const horizontal = Math.random() < 0.5;
@@ -269,6 +273,7 @@ function director(g: Partida, uid: string, u: Unit, b: Brain, dt: number, solids
   j.refuerzo -= dt;
   if (j.refuerzo <= 0) {
     j.refuerzo = intervalo(g, tn.reinforceEvery);
+    g.animar(uid, "rugido");
     const ola: string[] = j.fase === 1 ? ["fusilero", "robot"] : j.fase === 2 ? ["robot", "laser", "escudo"] : ["robot", "cazador", "laser"];
     g.director.spawnNear(ola as never, u.x, u.y, "jefe");
   }
@@ -277,6 +282,7 @@ function director(g: Partida, uid: string, u: Unit, b: Brain, dt: number, solids
     j.dash = 0.8;
     j.dashAng = toT;
     u.st = "cargando";
+    g.animar(uid, "carga");
     g.fx("texto", u.x, u.y, { s: "¡CARGA OMEGA!", c: 0xff4a4a });
   }
 }

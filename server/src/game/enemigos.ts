@@ -459,6 +459,7 @@ function attack(g: Partida, uid: string, u: Unit, b: Brain, t: Target, d: number
       const tn = ENEMY_TUNING.escudo;
       if (d < tn.meleeRange + 10 && b.cd <= 0) {
         b.cd = tn.cooldown;
+        g.animar(uid, "embestida");
         hitTarget(g, t, tn.meleeDamage);
         if (t.player) {
           g.setEstado(t.id, t.player, "aturdido", tn.stun);
@@ -520,6 +521,7 @@ function attack(g: Partida, uid: string, u: Unit, b: Brain, t: Target, d: number
       const tn = ENEMY_TUNING.perro;
       if (d < def.radius + 26 && b.cd <= 0) {
         b.cd = tn.cooldown;
+        g.animar(uid, "mordida");
         hitTarget(g, t, tn.biteDamage);
       }
       break;
@@ -548,6 +550,7 @@ function attack(g: Partida, uid: string, u: Unit, b: Brain, t: Target, d: number
         const ox = u.x + Math.cos(u.ang + Math.PI / 2) * 50;
         const oy = u.y + Math.sin(u.ang + Math.PI / 2) * 50;
         if (g.world.blocksMoveAt(ox, oy)) break;
+        g.animar(uid, "hab");
         if (!hasT) b.devices.push(g.spawnUnit("torreta", ox, oy, "humanos", b.tag));
         else if (!hasS) b.devices.push(g.spawnUnit("sensor", ox, oy, "humanos", b.tag));
         g.fx("chispa", ox, oy);
@@ -626,6 +629,7 @@ function updateMedico(g: Partida, uid: string, u: Unit, b: Brain, dt: number, so
   }
   if (b.cd <= 0) {
     b.cd = tn.cooldown;
+    g.animar(uid, "hab");
     g.fx("rescate", u.x, u.y, { c: 0x3ef0ff });
   }
   const t = findTarget(g, u, b, false);
@@ -709,6 +713,7 @@ function updateCazador(g: Partida, uid: string, u: Unit, b: Brain, dt: number, s
   if (d < tn.grabRange && b.cd <= 0 && t.player.estado === "ok" && !t.player.bajoTierra) {
     b.agarre = t.id;
     b.cd = tn.cooldown;
+    g.animar(uid, "agarre");
     g.setEstado(t.id, t.player, "agarrado");
     g.fx("agarre", t.x, t.y);
   }
@@ -789,6 +794,7 @@ function updatePulpo(g: Partida, uid: string, u: Unit, b: Brain, dt: number, sol
     u.ang = Math.atan2(o.y - u.y, o.x - u.x);
     if (bd < r + alcance && b.cd <= 0) {
       b.cd = kraken ? 0.7 : 0.5;
+      g.animar(uid, kraken ? "golpe" : "mordida");
       g.hitUnit(oid, o, dano, null, b.owner);
       g.fx(kraken ? "tentaculo" : "impacto", kraken ? u.x : o.x, kraken ? u.y : o.y, { x2: o.x, y2: o.y, c: 0xff6b3d });
     }
@@ -839,6 +845,7 @@ function updateHuesped(g: Partida, uid: string, u: Unit, b: Brain, dt: number, s
       if (!b.orden && bd > unitRadius(o.t) + 22) move(g, u, b, o.x - u.x, o.y - u.y, vel, dt, solids, r);
       if (bd < unitRadius(o.t) + 30 && b.cd <= 0) {
         b.cd = 0.6;
+        g.animar(uid, "mordida");
         g.hitUnit(oid, o, HAB.simbionte.criaDamage * (1 + (s.huesped ?? 0)), null, u.dueno);
         if (g.state.unidades.has(oid)) {
           // Los simbiontes aliados infectan más rápido.
@@ -894,6 +901,7 @@ function updatePlanta(g: Partida, uid: string, u: Unit, b: Brain): void {
   const [oid, o] = best;
   b.cd = 1.5;
   u.ang = Math.atan2(o.y - u.y, o.x - u.x);
+  g.animar(uid, "mordida");
   const ob = g.brains.get(oid);
   const jefe = rangoDe(o.t) === "jefe";
   if (ob && !jefe) ob.stun = Math.max(ob.stun, HAB.curandera.jardin.root);

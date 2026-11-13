@@ -33,6 +33,12 @@ export class Hud extends Phaser.Scene {
   private gPropio!: Phaser.GameObjects.Graphics;
   private txtVida!: Phaser.GameObjects.Text;
   private txtHab!: Phaser.GameObjects.Text;
+  private txtBasico!: Phaser.GameObjects.Text;
+  private txtCdBasico!: Phaser.GameObjects.Text;
+  private txtCdHab!: Phaser.GameObjects.Text;
+  /** Destello cuando un enfriamiento termina (clave → hasta cuándo). */
+  private listoHasta = new Map<string, number>();
+  private estabaListo = new Map<string, boolean>();
   private txtRecurso!: Phaser.GameObjects.Text;
   private txtUlti!: Phaser.GameObjects.Text;
   private txtAyuda!: Phaser.GameObjects.Text;
@@ -77,6 +83,9 @@ export class Hud extends Phaser.Scene {
     this.retratoPropio = this.add.image(0, 0, "retrato_cambiaformas").setOrigin(0.5);
     this.txtVida = this.add.text(0, 0, "", { ...TEXTO, fontSize: "16px" });
     this.txtHab = this.add.text(0, 0, "", { ...TEXTO, fontSize: "14px" });
+    this.txtBasico = this.add.text(0, 0, "", { ...TEXTO, fontSize: "14px", color: "#ffe2c8" });
+    this.txtCdBasico = this.add.text(0, 0, "", { ...TEXTO, fontSize: "12px", color: "#ffb08a" }).setOrigin(1, 0);
+    this.txtCdHab = this.add.text(0, 0, "", { ...TEXTO, fontSize: "12px", color: "#9fe8ff" }).setOrigin(1, 0);
     this.txtRecurso = this.add.text(0, 0, "", { ...TEXTO, fontSize: "13px", color: "#cfe6ff" });
     this.txtUlti = this.add.text(0, 0, "", { ...TEXTO, fontSize: "14px", color: "#ffd23e" });
     this.txtAyuda = this.add.text(0, 0, "", { ...TEXTO, fontSize: "12px", color: "#a9c6db", strokeThickness: 3 });
@@ -166,14 +175,15 @@ export class Hud extends Phaser.Scene {
     // Avisos: en pantallas pequeñas van en la columna libre entre los paneles y el minimapa,
     // o debajo del panel propio si no hay sitio (móvil en vertical).
     let ax = W / 2;
-    let aw = Math.min(720, W - 60);
+    // Sin pisar el panel de retos (derecha) ni el propio (izquierda)
+    let aw = Math.max(300, Math.min(720, W - 640));
     if (this.movil) {
       const izq = 272;
       const der = W - 200;
       if (der - izq >= 240) {
         ax = (izq + der) / 2;
         aw = der - izq;
-      } else y = Math.max(y, yEquipo + 112);
+      } else y = Math.max(y, yEquipo + 136);
     } else if (W < 1180) y = Math.max(y, yEquipo + 4);
     const now = this.time.now;
     this.avisos = this.avisos.filter((a) => {
@@ -273,15 +283,30 @@ export class Hud extends Phaser.Scene {
     return y;
   }
 
+  /** Barra de enfriamiento que se vacía al usarse y se rellena hasta estar lista (con destello al volver). */
+  private barraCd(g: Phaser.GameObjects.Graphics, clave: string, x: number, y: number, w: number, h: number, restante: number, total: number, colListo: number, colCarga: number): void {
+    const listo = restante <= 0.001;
+    const frac = listo || total <= 0 ? 1 : 1 - Math.min(1, restante / total);
+    const now = this.time.now;
+    if (listo && this.estabaListo.get(clave) === false) this.listoHasta.set(clave, now + 350);
+    this.estabaListo.set(clave, listo);
+    g.fillStyle(0x000000, 0.85).fillRect(x, y, w, h);
+    g.fillStyle(listo ? colListo : colCarga, 1).fillRect(x, y, w * frac, h);
+    if (!listo) g.fillStyle(0xffffff, 0.85).fillRect(x + w * frac - 2, y, 2, h);
+    const destello = (this.listoHasta.get(clave) ?? 0) - now;
+    if (destello > 0) g.fillStyle(0xffffff, (destello / 350) * 0.8).fillRect(x - 2, y - 2, w + 4, h + 4);
+    g.lineStyle(1, 0x000000, 0.9).strokeRect(x, y, w, h);
+  }
+
   private dibujarPropio(me: PlayerS | undefined, H: number, yEquipo: number): void {
     const g = this.gPropio.clear();
     for (const i of this.almasIconos) i.setVisible(false);
     const ocultar = !me;
-    for (const t of [this.txtVida, this.txtHab, this.txtRecurso, this.txtUlti, this.txtAyuda, this.retratoPropio]) t.setVisible(!ocultar);
+    for (const t of [this.txtVida, this.txtHab, this.txtBasico, this.txtCdBasico, this.txtCdHab, this.txtRecurso, this.txtUlti, this.txtAyuda, this.retratoPropio]) t.setVisible(!ocultar);
     if (!me) return;
     const compacto = this.movil;
-    const w = compacto ? 250 : 340;
-    const h = compacto ? 104 : 132;
+    const w = compacto ? 250 : 350;
+    const h = compacto ? 128 : 166;
     const x = 12;
     const y = compacto ? yEquipo + 2 : H - h - 12;
     const forma = isAlienKind(me.forma) ? ALIENS[me.forma] : undefined;
@@ -292,30 +317,44 @@ export class Hud extends Phaser.Scene {
     this.retratoPropio.setDisplaySize(rr, rr).setPosition(x + 8 + rr / 2, y + 8 + rr / 2);
     const tx = x + rr + 16;
     const bw = w - (tx - x) - 12;
+    const fs = compacto ? 11 : 13;
+    const paso = compacto ? 22 : 27;
     const prestada = me.forma !== me.kind ? ` (alma)` : "";
+    // Vida
     this.txtVida
       .setPosition(tx, y + 6)
       .setFontSize(compacto ? 13 : 15)
       .setText(me.vivo ? `${forma?.nombre ?? me.forma}${prestada} · ${Math.max(0, Math.round(me.hp))}/${me.maxHp}` : me.fantasma ? "Fantasma" : "Caído");
-    g.fillStyle(0x000000, 0.85).fillRect(tx, y + (compacto ? 24 : 28), bw, 10);
-    if (me.vivo) g.fillStyle(me.hp / me.maxHp > 0.35 ? 0x7dff6a : 0xff4a4a).fillRect(tx, y + (compacto ? 24 : 28), (bw * Math.max(0, me.hp)) / me.maxHp, 10);
-    if (me.escudo > 0) g.fillStyle(0xc08bff, 0.8).fillRect(tx, y + (compacto ? 21 : 25), Math.min(bw, me.escudo * 2), 3);
+    const vy = y + (compacto ? 24 : 28);
+    g.fillStyle(0x000000, 0.85).fillRect(tx, vy, bw, 10);
+    if (me.vivo) g.fillStyle(me.hp / me.maxHp > 0.35 ? 0x7dff6a : 0xff4a4a).fillRect(tx, vy, (bw * Math.max(0, me.hp)) / me.maxHp, 10);
+    if (me.escudo > 0) g.fillStyle(0xc08bff, 0.8).fillRect(tx, vy - 3, Math.min(bw, me.escudo * 2), 3);
+    const seg = (t: number) => (t > 0.05 ? `${t.toFixed(t < 10 ? 1 : 0)} s` : "");
+    // Ataque básico (se vacía al usarse y se recarga)
+    const by = vy + (compacto ? 14 : 16);
+    const berserk = me.forma === "cambiaformas" && me.ultiT > 0;
+    const nombreBasico = berserk ? "Garras berserk" : forma?.ataque.nombre ?? "Ataque";
+    this.txtBasico.setPosition(tx, by).setFontSize(fs).setText(`${this.c.ui.tactil ? "" : "[CLIC] "}${nombreBasico}`);
+    this.txtCdBasico.setPosition(tx + bw, by).setFontSize(fs - 1).setText(seg(me.cdBasico));
+    this.barraCd(g, "basico", tx, by + fs + 4, bw, 6, me.cdBasico, me.cdBasicoMax, 0xffb26a, 0x8a4a2a);
     // Habilidad
-    const hy = y + (compacto ? 38 : 44);
-    const frac = me.enfMax > 0 ? 1 - Math.min(1, me.enfriamiento / me.enfMax) : 1;
-    g.fillStyle(0x000000, 0.85).fillRect(tx, hy + 16, bw, 7).fillStyle(me.enfriamiento <= 0 ? 0x3ef0ff : 0x5a6a7a).fillRect(tx, hy + 16, bw * frac, 7);
+    const hy = by + paso;
     const tecla = this.c.ui.tactil ? "" : "[ESPACIO] ";
-    this.txtHab.setPosition(tx, hy).setFontSize(compacto ? 11 : 13).setText(`${tecla}${forma?.habilidad.nombre ?? ""}${me.confuso > 0 ? " · ¡INVERTIDO!" : ""}`);
+    this.txtHab.setPosition(tx, hy).setFontSize(fs).setText(`${tecla}${forma?.habilidad.nombre ?? ""}${me.confuso > 0 ? " · ¡INVERTIDO!" : ""}`);
+    this.txtCdHab.setPosition(tx + bw, hy).setFontSize(fs - 1).setText(seg(me.enfriamiento));
+    this.barraCd(g, "hab", tx, hy + fs + 4, bw, 6, me.enfriamiento, me.enfMax, 0x3ef0ff, 0x2a5a6a);
     // Recurso propio
+    const ry = hy + paso;
     const recurso = this.recurso(me);
-    this.txtRecurso.setPosition(tx, hy + 26).setFontSize(compacto ? 11 : 12).setText(recurso.txt);
-    if (recurso.frac >= 0) g.fillStyle(0x000000, 0.8).fillRect(tx + bw * 0.55, hy + 30, bw * 0.45, 6).fillStyle(recurso.color).fillRect(tx + bw * 0.55, hy + 30, bw * 0.45 * recurso.frac, 6);
+    this.txtRecurso.setPosition(tx, ry).setFontSize(compacto ? 10 : 12).setText(recurso.txt);
+    if (recurso.frac >= 0) g.fillStyle(0x000000, 0.8).fillRect(tx + bw * 0.55, ry + 4, bw * 0.45, 6).fillStyle(recurso.color).fillRect(tx + bw * 0.55, ry + 4, bw * 0.45 * recurso.frac, 6);
     // Definitiva
-    const uy = hy + (compacto ? 42 : 46);
+    const uy = ry + (compacto ? 16 : 20);
     const uf = me.ultiT > 0 ? me.ultiT / Math.max(0.1, me.ultiMax) : me.ulti;
-    g.fillStyle(0x000000, 0.85).fillRect(tx, uy + 16, bw, 7).fillStyle(me.ultiT > 0 ? 0xff8a3a : me.ulti >= 1 ? 0xffd23e : 0x8a7a3a).fillRect(tx, uy + 16, bw * Math.min(1, uf), 7);
+    g.fillStyle(0x000000, 0.85).fillRect(tx, uy + fs + 4, bw, 7).fillStyle(me.ultiT > 0 ? 0xff8a3a : me.ulti >= 1 ? 0xffd23e : 0x8a7a3a).fillRect(tx, uy + fs + 4, bw * Math.min(1, uf), 7);
+    if (me.ulti >= 1 && me.ultiT <= 0) g.lineStyle(2, 0xffd23e, 0.5 + 0.5 * Math.sin(this.time.now / 140)).strokeRect(tx - 2, uy + fs + 2, bw + 4, 11);
     const listo = me.ulti >= 1 ? "¡LISTA!" : `${Math.floor(me.ulti * 100)}%`;
-    this.txtUlti.setPosition(tx, uy).setFontSize(compacto ? 11 : 13).setText(`${this.c.ui.tactil ? "" : "[R] "}${forma?.ulti.nombre ?? ""} · ${me.ultiT > 0 ? "ACTIVA" : me.tunel === 1 ? "marca la salida" : listo}`);
+    this.txtUlti.setPosition(tx, uy).setFontSize(fs).setText(`${this.c.ui.tactil ? "" : "[R] "}${forma?.ulti.nombre ?? ""} · ${me.ultiT > 0 ? "ACTIVA" : me.tunel === 1 ? "marca la salida" : listo}`);
     const almas = me.almas.toArray();
     this.txtAyuda
       .setPosition(x + 10, y + h - 16)
