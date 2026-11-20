@@ -3,13 +3,22 @@
     "cambiaformas": {
       "frame": 128
     },
+    "skin1cambiaformas": {
+      "frame": 128
+    },
     "cambiaformas_humano": {
       "frame": 128
     },
     "delmar": {
       "frame": 128
     },
+    "skin1delmar": {
+      "frame": 128
+    },
     "inteligente": {
+      "frame": 128
+    },
+    "skin1inteligente": {
       "frame": 128
     },
     "fusilero": {
