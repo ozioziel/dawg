@@ -52,7 +52,7 @@ export function iniciarJuego(room: SalaJuego, volverAlMenu: (msg?: string) => vo
     parent: "juego",
     backgroundColor: "#0b2328",
     scale: { mode: Phaser.Scale.RESIZE, width: window.innerWidth, height: window.innerHeight },
-    render: { antialias: true, pixelArt: false, roundPixels: false },
+    render: { antialias: true, pixelArt: false, roundPixels: false, powerPreference: "high-performance" },
     // Solo en desarrollo: ?bucle=temporizador mantiene el juego en marcha aunque la pestaña no se dibuje (pruebas automáticas).
     fps: { target: 60, forceSetTimeOut: import.meta.env.DEV && location.search.includes("bucle=temporizador") },
     disableContextMenu: true,

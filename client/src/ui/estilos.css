@@ -30,6 +30,71 @@ body {
   font-family: "Cascadia Code", "Consolas", "Courier New", monospace;
   overflow: hidden;
   user-select: none;
+  overscroll-behavior: none;
+}
+
+#pantalla-carga {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #020503;
+  transition: opacity 0.4s ease, visibility 0.4s;
+}
+
+#pantalla-carga::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgba(141, 255, 114, 0.045) 0 1px, transparent 1px 4px),
+    radial-gradient(circle at center, transparent 42%, rgba(0, 0, 0, 0.72) 100%);
+}
+
+#pantalla-carga.lista {
+  opacity: 0;
+  visibility: hidden;
+}
+
+#pantalla-carga img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: auto;
+  filter: saturate(0.82) contrast(1.08) brightness(0.72);
+}
+
+.carga-terminal {
+  position: absolute;
+  left: max(24px, env(safe-area-inset-left, 0px));
+  right: max(24px, env(safe-area-inset-right, 0px));
+  bottom: max(24px, env(safe-area-inset-bottom, 0px));
+  z-index: 1;
+  display: grid;
+  gap: 7px;
+  padding: 14px 18px;
+  border: 2px solid #7dff6a;
+  background: rgba(1, 8, 3, 0.88);
+  color: #baffaa;
+  font: 700 12px "Courier New", monospace;
+  letter-spacing: 0.12em;
+  box-shadow: 6px 6px 0 #000, 0 0 22px rgba(125, 255, 106, 0.22);
+  text-shadow: 0 0 7px rgba(125, 255, 106, 0.5);
+}
+
+.carga-terminal strong {
+  font-size: clamp(13px, 2.4vw, 20px);
+}
+
+.cursor-terminal {
+  animation: cursor-terminal 0.65s steps(1, end) infinite;
+}
+
+@keyframes cursor-terminal {
+  50% { opacity: 0; }
 }
 
 #juego {
@@ -39,6 +104,8 @@ body {
 
 #juego canvas {
   display: block;
+  image-rendering: auto;
+  filter: contrast(1.045) saturate(1.1) brightness(1.025);
 }
 
 #ui {
@@ -438,6 +505,49 @@ body {
   pointer-events: none;
 }
 
+.cuarto-control {
+  display: none;
+  position: absolute;
+  left: max(18px, env(safe-area-inset-left, 0px));
+  bottom: max(18px, env(safe-area-inset-bottom, 0px));
+  width: 112px;
+  height: 112px;
+  border: 2px solid rgba(200, 247, 197, 0.38);
+  border-radius: 50%;
+  background: rgba(3, 8, 12, 0.46);
+  touch-action: none;
+  pointer-events: auto;
+  z-index: 2001;
+}
+
+.cuarto-control::after {
+  content: "MOVER";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: end center;
+  padding-bottom: 12px;
+  color: rgba(234, 246, 255, 0.6);
+  font: 700 9px "Courier New", monospace;
+  letter-spacing: 0.08em;
+}
+
+.cuarto-control-punta {
+  position: absolute;
+  left: 34px;
+  top: 34px;
+  width: 40px;
+  height: 40px;
+  border: 2px solid #0a0a0c;
+  border-radius: 50%;
+  background: rgba(120, 232, 192, 0.7);
+  transition: transform 40ms linear;
+}
+
+.cuarto-control.activo {
+  border-color: rgba(141, 255, 114, 0.75);
+}
+
 .cuarto-figura {
   position: absolute;
   display: flex;
@@ -476,6 +586,12 @@ body {
 @media (max-width: 900px) {
   .lobby-layout {
     grid-template-columns: 1fr;
+  }
+
+  @media (pointer: coarse) {
+    .cuarto-control {
+      display: block;
+    }
   }
 
   .cuarto {
@@ -966,6 +1082,21 @@ kbd {
   height: 62%;
   pointer-events: auto;
   touch-action: none;
+}
+.tactil-guia {
+  position: absolute;
+  bottom: max(18px, env(safe-area-inset-bottom, 0px));
+  left: 18px;
+  color: rgba(234, 246, 255, 0.4);
+  font: 700 10px "Chakra Petch", system-ui, sans-serif;
+  letter-spacing: 0.12em;
+  pointer-events: none;
+  text-shadow: 0 1px 3px #000;
+}
+.tactil-zona.der .tactil-guia {
+  right: 0;
+  left: auto;
+  text-align: right;
 }
 .tactil-zona.izq {
   left: 0;
