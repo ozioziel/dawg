@@ -40,9 +40,15 @@ export function crearCuarto(room: SalaLobby): { el: HTMLElement; destroy: () => 
     h("img", { class: "cuarto-fondo", src: "assets/cuarto_espera.png", alt: "Cuarto de espera", draggable: "false" }),
     capa,
   );
+  const control = h("div", { class: "cuarto-control", "aria-label": "Mover alien" });
+  const punta = h("span", { class: "cuarto-control-punta" });
+  control.append(punta);
+  el.append(control);
 
   const figuras = new Map<string, Figura>();
   const teclas = new Set<string>();
+  let tactilId: number | null = null;
+  let tactil = { x: 0, y: 0 };
   let activo = true;
   let ultimo = performance.now();
   let ultimoEnvio = 0;
@@ -58,6 +64,43 @@ export function crearCuarto(room: SalaLobby): { el: HTMLElement; destroy: () => 
   window.addEventListener("keydown", onDown);
   window.addEventListener("keyup", onUp);
   window.addEventListener("blur", onBlur);
+
+  const moverTactil = (e: PointerEvent) => {
+    const r = control.getBoundingClientRect();
+    let x = (e.clientX - (r.left + r.width / 2)) / (r.width * 0.42);
+    let y = (e.clientY - (r.top + r.height / 2)) / (r.height * 0.42);
+    const n = Math.hypot(x, y);
+    if (n > 1) {
+      x /= n;
+      y /= n;
+    }
+    tactil = { x, y };
+    punta.style.transform = `translate(${x * r.width * 0.24}px, ${y * r.height * 0.24}px)`;
+  };
+  control.addEventListener("pointerdown", (e) => {
+    if (tactilId !== null) return;
+    e.preventDefault();
+    tactilId = e.pointerId;
+    control.setPointerCapture(e.pointerId);
+    control.classList.add("activo");
+    moverTactil(e);
+  });
+  control.addEventListener("pointermove", (e) => {
+    if (e.pointerId === tactilId) {
+      e.preventDefault();
+      moverTactil(e);
+    }
+  });
+  const finTactil = (e: PointerEvent) => {
+    if (e.pointerId !== tactilId) return;
+    tactilId = null;
+    tactil = { x: 0, y: 0 };
+    punta.style.transform = "translate(0, 0)";
+    control.classList.remove("activo");
+  };
+  control.addEventListener("pointerup", finTactil);
+  control.addEventListener("pointercancel", finTactil);
+  control.addEventListener("lostpointercapture", finTactil);
 
   const destroy = () => {
     activo = false;
@@ -132,8 +175,8 @@ export function crearCuarto(room: SalaLobby): { el: HTMLElement; destroy: () => 
       f.etiqueta.classList.toggle("listo", p.listo);
 
       if (propio) {
-        const dx = (teclas.has("KeyD") || teclas.has("ArrowRight") ? 1 : 0) - (teclas.has("KeyA") || teclas.has("ArrowLeft") ? 1 : 0);
-        const dy = (teclas.has("KeyS") || teclas.has("ArrowDown") ? 1 : 0) - (teclas.has("KeyW") || teclas.has("ArrowUp") ? 1 : 0);
+        const dx = tactil.x || (teclas.has("KeyD") || teclas.has("ArrowRight") ? 1 : 0) - (teclas.has("KeyA") || teclas.has("ArrowLeft") ? 1 : 0);
+        const dy = tactil.y || (teclas.has("KeyS") || teclas.has("ArrowDown") ? 1 : 0) - (teclas.has("KeyW") || teclas.has("ArrowUp") ? 1 : 0);
         const libre = st.estado === "esperando";
         f.mov = libre && (dx !== 0 || dy !== 0);
         if (f.mov) {

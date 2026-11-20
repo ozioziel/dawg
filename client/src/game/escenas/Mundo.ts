@@ -125,7 +125,8 @@ export class Mundo extends Phaser.Scene {
     const map = this.make.tilemap({ key: "area51" });
     const ts = map.addTilesetImage("laboratorio", "tiles")!;
     map.createLayer("suelo", ts, 0, 0)!.setDepth(0);
-    map.createLayer("paredes", ts, 0, 0)!.setDepth(1);
+    const paredes = map.createLayer("paredes", ts, 0, 0)!.setDepth(1);
+    paredes.setTint(0xd7e5e4);
     const cam = this.cameras.main;
     cam.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
     cam.setBackgroundColor("#0b2328");
@@ -282,7 +283,7 @@ export class Mundo extends Phaser.Scene {
     for (const o of w.find("door")) {
       const v = o.props.orientacion === "v";
       const s = this.add.sprite(o.x + o.w / 2, o.y + o.h / 2, v ? "puerta_v" : "puerta_h", 0).setDisplaySize(o.w, o.h).setDepth(v ? prof(o.y + o.h) : prof(o.y + o.h) - 40);
-      if (o.props.gigante) s.setTint(0xffd23e);
+      s.setTint(o.props.gigante ? 0xffe38a : 0xcceeff);
       const txt = this.add.text(o.x + o.w / 2, o.y - 6, o.props.gigante ? "GRAN COMPUERTA" : "SELLADA", { ...TEXTO, fontSize: o.props.gigante ? "22px" : "14px", color: o.props.gigante ? "#ffd23e" : "#ff6a6a" }).setOrigin(0.5, 1).setDepth(PROF_UI_MUNDO).setVisible(Boolean(o.props.gigante));
       this.vPuerta.set(o.name, { s, txt });
     }
@@ -362,7 +363,11 @@ export class Mundo extends Phaser.Scene {
       const v = this.vPuerta.get(id);
       if (!v) return;
       if (Number(v.s.frame.name) !== (d.abierta ? 1 : 0)) v.s.setFrame(d.abierta ? 1 : 0);
-      if (d.sellada) v.s.setTint(0x6a2a2a);
+      const gigante = id === "DF";
+      if (d.abierta) v.s.setTint(gigante ? 0x7dff6a : 0xaef8da);
+      else if (d.sellada) v.s.setTint(0xff6a6a);
+      else v.s.setTint(gigante ? 0xffe38a : 0xcceeff);
+      v.s.setAlpha(d.abierta ? 0.58 : 1);
       if (id !== "DF") v.txt.setVisible(d.sellada && !d.abierta);
     });
     const ahora = new Set<number>();
@@ -382,6 +387,10 @@ export class Mundo extends Phaser.Scene {
       const tex = this.textures.exists("bq_" + b.k) ? "bq_" + b.k : "bq_muro";
       const img = this.add.tileSprite(b.x * TILE, b.y * TILE, b.w * TILE, b.h * TILE, tex).setOrigin(0);
       img.setDepth(b.k === "abismo" ? 2 : prof((b.y + b.h) * TILE));
+      if (b.k === "vidrio") img.setTint(0x9fefff).setAlpha(0.72);
+      else if (b.k === "valla") img.setTint(0xffca6a);
+      else if (b.k === "hielo" || b.k === "muro") img.setTint(0xc5f3ff);
+      else img.setTint(0xf0e2d0);
       this.vBloq.set(id, { img, b: { k: b.k, x: b.x, y: b.y, w: b.w, h: b.h, m: b.m } });
     });
     for (const [id, v] of this.vBloq) {
@@ -480,19 +489,13 @@ export class Mundo extends Phaser.Scene {
   }
 
   // ------------------------------------------------------------------ jugadores
-  private skinDe = (forma: string): number => {
-    let s = 0;
-    this.st.jugadores.forEach((p) => p.kind === forma && (s = p.skin));
-    return s;
-  };
-
   private syncJugadores(dt: number, me: PlayerS | undefined): void {
     const vivos = new Set<string>();
     this.st.jugadores.forEach((p, id) => {
       vivos.add(id);
       const yo = id === this.room.sessionId;
       let v = this.vJug.get(id);
-      const hoja = hojaJugador(p, this.skinDe);
+      const hoja = hojaJugador(p);
       if (!v) {
         v = new VistaPersonaje(this, hoja, p.x, p.y, { nombre: yo ? undefined : p.nombre, color: COLOR_ALIEN[p.kind] });
         this.vJug.set(id, v);
@@ -715,9 +718,18 @@ export class Mundo extends Phaser.Scene {
     if (u.t === "nodo") img.setTint(Phaser.Display.Color.GetColor(255 - u.infeccion * 60, 255 - u.infeccion * 160, 255));
     if (u.t === "generador" || u.t === "pilon") img.setAlpha(u.blindado ? 0.6 + Math.sin(this.time.now / 80) * 0.3 : 1);
     if (u.t !== "nodo" && u.t !== "terminal" && u.hp < u.maxHp) {
-      this.gLaser.fillStyle(0x000000, 0.8).fillRect(u.x - 26, u.y - 96, 52, 6).fillStyle(0xff4a4a).fillRect(u.x - 26, u.y - 96, (52 * Math.max(0, u.hp)) / u.maxHp, 6);
+      this.barraEnemigo(u.x - 28, u.y - 99, 56, 8, u.hp / u.maxHp, 0xff4a4a);
     }
-    if (u.t === "terminal") this.gLaser.fillStyle(0x000000, 0.8).fillRect(u.x - 30, u.y - 96, 60, 6).fillStyle(0x7dff6a).fillRect(u.x - 30, u.y - 96, (60 * Math.max(0, u.hp)) / u.maxHp, 6);
+    if (u.t === "terminal") this.barraEnemigo(u.x - 32, u.y - 99, 64, 8, u.hp / u.maxHp, 0x7dff6a);
+  }
+
+  private barraEnemigo(x: number, y: number, w: number, h: number, frac: number, color: number): void {
+    const p = Phaser.Math.Clamp(frac, 0, 1);
+    this.gLaser.fillStyle(0x000000, 0.94).fillRoundedRect(x - 2, y - 2, w + 4, h + 4, 2);
+    this.gLaser.lineStyle(1.5, 0x7dff6a, 0.8).strokeRoundedRect(x - 2, y - 2, w + 4, h + 4, 2);
+    this.gLaser.fillStyle(color, 1).fillRect(x, y, w * p, h);
+    this.gLaser.fillStyle(0xffffff, 0.3).fillRect(x, y, w * p, 2);
+    for (let i = 1; i < 8; i++) this.gLaser.lineStyle(1, 0x031108, 0.7).lineBetween(x + (w * i) / 8, y, x + (w * i) / 8, y + h);
   }
 
   private etiqueta(id: string, u: UnitS, y: number): void {

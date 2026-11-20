@@ -3,6 +3,7 @@ import { iniciarJuego } from "./game/juego";
 import { intentarReconectar, type SalaJuego } from "./net/conexion";
 import { mostrarMenu } from "./ui/menu";
 
+const inicio = performance.now();
 const empezar = (room: SalaJuego) => iniciarJuego(room, (msg) => mostrarMenu(empezar, msg));
 
 async function arrancar(): Promise<void> {
@@ -20,4 +21,12 @@ async function arrancar(): Promise<void> {
   else mostrarMenu(empezar);
 }
 
-void arrancar();
+void arrancar()
+  .finally(() => {
+    const espera = Math.max(0, 5000 - (performance.now() - inicio));
+    window.setTimeout(() => {
+      const carga = document.getElementById("pantalla-carga");
+      carga?.classList.add("lista");
+      window.setTimeout(() => carga?.remove(), 450);
+    }, espera);
+  });

@@ -43,6 +43,8 @@ export class ControlesTactiles {
     this.el = h("div", { class: "tactil" });
     const zonaIzq = h("div", { class: "tactil-zona izq" });
     const zonaDer = h("div", { class: "tactil-zona der" });
+    zonaIzq.append(h("span", { class: "tactil-guia" }, "MOVER"));
+    zonaDer.append(h("span", { class: "tactil-guia" }, "APUNTAR + DISPARAR"));
     this.el.append(zonaIzq, zonaDer);
     this.engancharStick(zonaIzq, "izq");
     this.engancharStick(zonaDer, "der");
