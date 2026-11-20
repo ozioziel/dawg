@@ -466,9 +466,17 @@ export class VistaPersonaje {
     this.etiqueta?.setPosition(x, top - 8).setDepth(PROF_UI_MUNDO + y);
     this.barra.clear().setDepth(PROF_UI_MUNDO + y);
     if (hp !== undefined && maxHp && hp < maxHp && hp > 0) {
-      const w = 44 * (this.escala / ESCALA);
-      this.barra.fillStyle(0x0a0a0c, 0.9).fillRect(x - w / 2 - 2, top - 4, w + 4, 8);
-      this.barra.fillStyle(hp / maxHp > 0.35 ? 0x7dff6a : 0xff4a4a, 1).fillRect(x - w / 2, top - 2, (w * Math.max(0, hp)) / maxHp, 4);
+      const w = 52 * (this.escala / ESCALA);
+      const h = 8;
+      const frac = Phaser.Math.Clamp(hp / maxHp, 0, 1);
+      this.barra.fillStyle(0x000000, 0.94).fillRoundedRect(x - w / 2 - 3, top - 6, w + 6, h + 4, 2);
+      this.barra.lineStyle(1.5, 0x8dff72, 0.8).strokeRoundedRect(x - w / 2 - 3, top - 6, w + 6, h + 4, 2);
+      this.barra.fillStyle(frac > 0.35 ? 0x7dff6a : 0xff4a4a, 1).fillRoundedRect(x - w / 2, top - 4, w * frac, h, 1);
+      this.barra.fillStyle(0xffffff, 0.35).fillRect(x - w / 2, top - 4, w * frac, 2);
+      for (let i = 1; i < 8; i++) {
+        const sx = x - w / 2 + (w * i) / 8;
+        this.barra.lineStyle(1, 0x031108, 0.7).lineBetween(sx, top - 4, sx, top - 4 + h);
+      }
     }
     if (hp !== undefined) {
       if (this.ultimoHp >= 0 && hp < this.ultimoHp) this.golpe();

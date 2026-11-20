@@ -234,11 +234,23 @@ export class Hud extends Phaser.Scene {
     return out;
   }
 
+  private barraTerminal(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number, frac: number, color: number, segmentos = 10): void {
+    const p = Phaser.Math.Clamp(frac, 0, 1);
+    g.fillStyle(0x010503, 0.96).fillRoundedRect(x - 2, y - 2, w + 4, h + 4, 2);
+    g.lineStyle(1.5, 0x6fbd65, 0.9).strokeRoundedRect(x - 2, y - 2, w + 4, h + 4, 2);
+    g.fillStyle(color, 1).fillRoundedRect(x, y, w * p, h, 1);
+    if (p > 0) g.fillStyle(0xffffff, 0.34).fillRect(x, y, w * p, 2);
+    for (let i = 1; i < segmentos; i++) {
+      const sx = x + (w * i) / segmentos;
+      g.lineStyle(1, 0x031108, 0.75).lineBetween(sx, y, sx, y + h);
+    }
+  }
+
   private dibujarEquipo(): number {
     const g = this.gEquipo.clear();
     const compacto = this.movil;
-    const ancho = compacto ? 170 : 232;
-    const alto = compacto ? 36 : 50;
+    const ancho = compacto ? 190 : 258;
+    const alto = compacto ? 46 : 62;
     let y = 12;
     const vistos = new Set<string>();
     for (const [id, p] of this.ordenJugadores()) {
@@ -247,15 +259,19 @@ export class Hud extends Phaser.Scene {
       if (!f) {
         f = {
           img: this.add.image(0, 0, `retrato_${p.forma}`).setOrigin(0.5),
-          nombre: this.add.text(0, 0, "", { ...TEXTO, fontSize: "14px" }),
+          nombre: this.add.text(0, 0, "", { ...TEXTO, fontSize: "14px", strokeThickness: 4 }),
           icono: this.add.image(0, 0, "icono_hielo").setScale(0.5).setVisible(false),
         };
         this.filas.set(id, f);
       }
       const color = COLOR_ALIEN[p.forma] ?? 0xffffff;
-      g.fillStyle(0x0a1622, 0.82).fillRoundedRect(12, y, ancho, alto, 10).lineStyle(3, color, 0.9).strokeRoundedRect(12, y, ancho, alto, 10);
+      g.fillStyle(0x000000, 0.82).fillRoundedRect(17, y + 5, ancho, alto, 3);
+      g.fillStyle(0x031008, 0.94).fillRoundedRect(12, y, ancho, alto, 3).lineStyle(2, color, 1).strokeRoundedRect(12, y, ancho, alto, 3);
+      g.lineStyle(1, 0x7dff6a, 0.2).lineBetween(16, y + 4, 12 + ancho - 4, y + 4);
+      const foto = alto - 8;
+      g.fillStyle(0x000000, 0.9).fillRoundedRect(16, y + 4, foto, foto, 2).lineStyle(2, 0x7dff6a, 0.65).strokeRoundedRect(16, y + 4, foto, foto, 2);
       if (this.textures.exists(`retrato_${p.forma}`)) f.img.setTexture(`retrato_${p.forma}`);
-      f.img.setDisplaySize(alto - 8, alto - 8).setPosition(12 + alto / 2, y + alto / 2).setAlpha(p.vivo ? 1 : 0.4);
+      f.img.setDisplaySize(foto - 4, foto - 4).setPosition(16 + foto / 2, y + 4 + foto / 2).setAlpha(p.vivo ? 1 : 0.4);
       const yo = id === this.c.room.sessionId;
       const formaTxt = p.forma !== p.kind && isAlienKind(p.forma) ? ` → ${ALIENS[p.forma].nombre}` : "";
       f.nombre
@@ -263,10 +279,10 @@ export class Hud extends Phaser.Scene {
         .setFontSize(compacto ? 12 : 14)
         .setText(`${p.nombre}${yo ? " (tú)" : ""}${p.conectado ? "" : " ⚠"}${formaTxt}`)
         .setColor("#" + color.toString(16).padStart(6, "0"));
-      const bw = ancho - alto - 12;
-      const by = y + alto - (compacto ? 12 : 16);
-      g.fillStyle(0x000000, 0.8).fillRect(12 + alto + 2, by, bw, compacto ? 7 : 9);
-      if (p.vivo) g.fillStyle(p.hp / p.maxHp > 0.35 ? 0x7dff6a : 0xff4a4a).fillRect(12 + alto + 2, by, (bw * Math.max(0, p.hp)) / p.maxHp, compacto ? 7 : 9);
+      const bx = 12 + alto + 3;
+      const bw = ancho - alto - 13;
+      const by = y + alto - (compacto ? 13 : 16);
+      this.barraTerminal(g, bx, by, bw, compacto ? 7 : 9, p.vivo ? p.hp / p.maxHp : 0, p.hp / p.maxHp > 0.35 ? 0x7dff6a : 0xff4a4a, 10);
       if (p.ulti >= 1) g.fillStyle(0xffd23e).fillCircle(12 + ancho - 10, y + 10, 5);
       const icon = !p.vivo ? "icono_calavera" : p.estado === "congelado" ? "icono_hielo" : p.estado === "red" ? "icono_red" : p.estado === "agarrado" ? "icono_agarre" : p.almas.length ? "icono_alma" : "";
       f.icono.setVisible(Boolean(icon)).setPosition(12 + ancho - 26, y + alto / 2);
@@ -305,17 +321,20 @@ export class Hud extends Phaser.Scene {
     for (const t of [this.txtVida, this.txtHab, this.txtBasico, this.txtCdBasico, this.txtCdHab, this.txtRecurso, this.txtUlti, this.txtAyuda, this.retratoPropio]) t.setVisible(!ocultar);
     if (!me) return;
     const compacto = this.movil;
-    const w = compacto ? 250 : 350;
-    const h = compacto ? 128 : 166;
+    const w = compacto ? 278 : 370;
+    const h = compacto ? 146 : 184;
     const x = 12;
     const y = compacto ? yEquipo + 2 : H - h - 12;
     const forma = isAlienKind(me.forma) ? ALIENS[me.forma] : undefined;
     const color = COLOR_ALIEN[me.forma] ?? 0xffffff;
-    g.fillStyle(0x0a1622, 0.86).fillRoundedRect(x, y, w, h, 14).lineStyle(3, color, 1).strokeRoundedRect(x, y, w, h, 14);
-    const rr = compacto ? 34 : 46;
+    g.fillStyle(0x000000, 0.86).fillRoundedRect(x + 5, y + 5, w, h, 4);
+    g.fillStyle(0x031008, 0.95).fillRoundedRect(x, y, w, h, 4).lineStyle(3, color, 1).strokeRoundedRect(x, y, w, h, 4);
+    g.fillStyle(0x7dff6a, 0.25).fillRect(x + 8, y + 6, w - 16, 2);
+    const rr = compacto ? 52 : 72;
+    g.fillStyle(0x000000, 0.9).fillRoundedRect(x + 7, y + 9, rr + 2, rr + 2, 2).lineStyle(2, 0x9bff85, 0.9).strokeRoundedRect(x + 7, y + 9, rr + 2, rr + 2, 2);
     if (this.textures.exists(`retrato_${me.forma}`)) this.retratoPropio.setTexture(`retrato_${me.forma}`);
-    this.retratoPropio.setDisplaySize(rr, rr).setPosition(x + 8 + rr / 2, y + 8 + rr / 2);
-    const tx = x + rr + 16;
+    this.retratoPropio.setDisplaySize(rr - 4, rr - 4).setPosition(x + 8 + rr / 2, y + 10 + rr / 2);
+    const tx = x + rr + 17;
     const bw = w - (tx - x) - 12;
     const fs = compacto ? 11 : 13;
     const paso = compacto ? 22 : 27;
@@ -326,9 +345,8 @@ export class Hud extends Phaser.Scene {
       .setFontSize(compacto ? 13 : 15)
       .setText(me.vivo ? `${forma?.nombre ?? me.forma}${prestada} · ${Math.max(0, Math.round(me.hp))}/${me.maxHp}` : me.fantasma ? "Fantasma" : "Caído");
     const vy = y + (compacto ? 24 : 28);
-    g.fillStyle(0x000000, 0.85).fillRect(tx, vy, bw, 10);
-    if (me.vivo) g.fillStyle(me.hp / me.maxHp > 0.35 ? 0x7dff6a : 0xff4a4a).fillRect(tx, vy, (bw * Math.max(0, me.hp)) / me.maxHp, 10);
-    if (me.escudo > 0) g.fillStyle(0xc08bff, 0.8).fillRect(tx, vy - 3, Math.min(bw, me.escudo * 2), 3);
+    this.barraTerminal(g, tx, vy, bw, 10, me.vivo ? me.hp / me.maxHp : 0, me.hp / me.maxHp > 0.35 ? 0x7dff6a : 0xff4a4a, 12);
+    if (me.escudo > 0) g.fillStyle(0xc08bff, 0.9).fillRect(tx, vy - 4, Math.min(bw, me.escudo * 2), 3);
     const seg = (t: number) => (t > 0.05 ? `${t.toFixed(t < 10 ? 1 : 0)} s` : "");
     // Ataque básico (se vacía al usarse y se recarga)
     const by = vy + (compacto ? 14 : 16);
@@ -351,7 +369,7 @@ export class Hud extends Phaser.Scene {
     // Definitiva
     const uy = ry + (compacto ? 16 : 20);
     const uf = me.ultiT > 0 ? me.ultiT / Math.max(0.1, me.ultiMax) : me.ulti;
-    g.fillStyle(0x000000, 0.85).fillRect(tx, uy + fs + 4, bw, 7).fillStyle(me.ultiT > 0 ? 0xff8a3a : me.ulti >= 1 ? 0xffd23e : 0x8a7a3a).fillRect(tx, uy + fs + 4, bw * Math.min(1, uf), 7);
+    this.barraTerminal(g, tx, uy + fs + 4, bw, 7, uf, me.ultiT > 0 ? 0xff8a3a : me.ulti >= 1 ? 0xffd23e : 0x8a7a3a, 14);
     if (me.ulti >= 1 && me.ultiT <= 0) g.lineStyle(2, 0xffd23e, 0.5 + 0.5 * Math.sin(this.time.now / 140)).strokeRect(tx - 2, uy + fs + 2, bw + 4, 11);
     const listo = me.ulti >= 1 ? "¡LISTA!" : `${Math.floor(me.ulti * 100)}%`;
     this.txtUlti.setPosition(tx, uy).setFontSize(fs).setText(`${this.c.ui.tactil ? "" : "[R] "}${forma?.ulti.nombre ?? ""} · ${me.ultiT > 0 ? "ACTIVA" : me.tunel === 1 ? "marca la salida" : listo}`);
@@ -462,9 +480,9 @@ export class Hud extends Phaser.Scene {
       .setText(NOMBRE_JEFE[jefe.t] ?? "JEFE")
       .setFontSize(this.movil ? 18 : 24)
       .setPosition(W / 2, y + 26);
-    g.fillStyle(0x000000, 0.8).fillRect(W / 2 - w / 2, y + 30, w, 14);
-    g.fillStyle(jefe.blindado || (jefe.t === "jefe" && jefe.tanques > 0) || (jefe.t === "centinela" && jefe.st !== "enfriado") ? 0x8aa0c0 : 0xff4a4a).fillRect(W / 2 - w / 2, y + 30, (w * Math.max(0, jefe.hp)) / jefe.maxHp, 14);
-    g.lineStyle(3, 0x0a0a0c).strokeRect(W / 2 - w / 2, y + 30, w, 14);
+    const colorJefe = jefe.blindado || (jefe.t === "jefe" && jefe.tanques > 0) || (jefe.t === "centinela" && jefe.st !== "enfriado") ? 0x8aa0c0 : 0xff4a4a;
+    g.fillStyle(0x000000, 0.85).fillRoundedRect(W / 2 - w / 2 - 7, y + 23, w + 14, 28, 3);
+    this.barraTerminal(g, W / 2 - w / 2, y + 30, w, 14, jefe.hp / jefe.maxHp, colorJefe, 18);
     if (jefe.t === "jefe") {
       const cols = [0x3ec0ff, 0x6be04a, 0xa46bff];
       for (let i = 0; i < 3; i++) g.fillStyle(i >= jefe.tanques ? 0x333333 : cols[i], 1).fillRoundedRect(W / 2 + w / 2 + 8 + i * 18, y + 26, 14, 22, 4);

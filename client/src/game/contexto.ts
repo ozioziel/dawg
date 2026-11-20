@@ -55,14 +55,13 @@ export function tiempoServidor(): number {
 export const COLOR_ALIEN: Record<string, number> = Object.fromEntries(ALIEN_KINDS.map((k) => [k, ALIENS[k].color]));
 
 /** Hoja de sprites de un jugador según su forma actual, su skin y sus estados. */
-export function hojaJugador(p: PlayerS, skinDe: (forma: string) => number): string {
+export function hojaJugador(p: PlayerS): string {
   if (p.forma === "cambiaformas") {
     if (p.ultiT > 0) return "cambiaformas_berserk";
     if (p.disfrazado) return p.identidad ? SPRITE_DE[p.identidad] ?? p.identidad : "cambiaformas_humano";
   }
   if (p.forma === "simbionte" && p.ultiT > 0) return "simbionte_coloso";
-  const skin = skinDe(p.forma);
-  return skin ? `skin${skin}${p.forma}` : p.forma;
+  return p.skin ? `skin${p.skin}${p.forma}` : p.forma;
 }
 
 /** Unidades que se dibujan con la hoja de otra. */
