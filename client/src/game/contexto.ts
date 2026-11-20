@@ -7,6 +7,7 @@ import type { Chat } from "../ui/chat";
 /** Lo que comparten todas las escenas del juego. */
 export interface Ctx {
   room: SalaJuego;
+  carga: number;
   chat: Chat;
   world: World;
   ui: {

@@ -2,6 +2,7 @@
 import Phaser from "phaser";
 import { ALIEN_KINDS } from "@dawg/shared";
 import mapa from "../../../../maps/area51.json";
+import { errorCarga, finalizarCarga } from "../../ui/carga";
 import { TITULO, ctx } from "../contexto";
 
 export const ANIMS_DIRS = ["down", "up", "side"] as const;
@@ -13,11 +14,15 @@ interface Manifest {
 }
 
 export class Carga extends Phaser.Scene {
+  private errores: string[] = [];
+
   constructor() {
     super("Carga");
   }
 
   preload(): void {
+    this.errores = [];
+    this.load.on("loaderror", (file: Phaser.Loader.File) => this.errores.push(file.key));
     const { width, height } = this.scale;
     const txt = this.add.text(width / 2, height / 2 - 30, "Cargando el Área 51…", { ...TITULO, fontSize: "42px" }).setOrigin(0.5);
     const barra = this.add.rectangle(width / 2 - 200, height / 2 + 20, 0, 18, 0x7dff6a).setOrigin(0, 0.5);
@@ -44,6 +49,12 @@ export class Carga extends Phaser.Scene {
   }
 
   create(): void {
+    const c = ctx(this);
+    if (this.errores.length) {
+      console.error("No se pudieron cargar los recursos:", this.errores);
+      errorCarga(c.carga, "NO SE PUDIERON CARGAR LOS RECURSOS DE LA PARTIDA.", () => c.salir("No se pudieron cargar los recursos. Inténtalo de nuevo."));
+      return;
+    }
     const m = this.cache.json.get("manifest") as Manifest;
     for (const [name, info] of Object.entries(m.personajes)) {
       const rapido = /perro|cazador|escarabajo|cria|dron/.test(name);
@@ -74,6 +85,8 @@ export class Carga extends Phaser.Scene {
     }
     this.scene.start("Mundo");
     this.scene.launch("Hud");
-    ctx(this).room.send("cargado");
+    void finalizarCarga(c.carga).then((lista) => {
+      if (lista) c.room.send("cargado");
+    });
   }
 }

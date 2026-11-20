@@ -49,6 +49,8 @@ Cada jugador elige un alien distinto (de 1 a 5 por partida).
 
 **Móvil (mejor en horizontal):** joystick izquierdo para moverse, joystick derecho para apuntar y atacar, y botones de habilidad, definitiva, E, forma, alma, ping, mapa, chat y mejora.
 
+Al iniciar la página y al entrar en una partida aparece la pantalla de carga durante al menos cinco segundos y hasta que los recursos estén listos. Al recibir daño, un destello verde y una breve distorsión indican el impacto; la opción de movimiento reducido del dispositivo atenúa el efecto.
+
 ## Jugar en tu PC (desarrollo)
 
 Necesitas **Node.js 20 o superior**.

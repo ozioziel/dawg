@@ -107,6 +107,9 @@ export class Mundo extends Phaser.Scene {
   private siguiendo = "";
   private tactil?: ControlesTactiles;
   private chorroT = 0;
+  private capaDano!: HTMLDivElement;
+  private animDano?: Animation;
+  private animDistorsion?: Animation;
 
   constructor() {
     super("Mundo");
@@ -122,6 +125,14 @@ export class Mundo extends Phaser.Scene {
 
   create(): void {
     this.c = ctx(this);
+    this.capaDano = document.createElement("div");
+    this.capaDano.className = "dano-pantalla";
+    document.getElementById("juego")!.append(this.capaDano);
+    this.events.once("shutdown", () => {
+      this.animDano?.cancel();
+      this.animDistorsion?.cancel();
+      this.capaDano.remove();
+    });
     const map = this.make.tilemap({ key: "area51" });
     const ts = map.addTilesetImage("laboratorio", "tiles")!;
     map.createLayer("suelo", ts, 0, 0)!.setDepth(0);
@@ -319,7 +330,7 @@ export class Mundo extends Phaser.Scene {
     this.seguirCamara(me);
     this.c.ui.prompt = this.calcularPrompt(me);
     if (me) {
-      if (this.vidaPrev >= 0 && me.hp < this.vidaPrev) this.cameras.main.shake(120, 0.004);
+      if (this.vidaPrev >= 0 && me.hp < this.vidaPrev) this.efectoDano();
       this.vidaPrev = me.hp;
       if (this.habDown && performance.now() - this.habEnvio > 100) {
         this.habEnvio = performance.now();
@@ -331,6 +342,26 @@ export class Mundo extends Phaser.Scene {
         this.tactil.actualizar(me.forma, frac, me.ulti, me.ultiT > 0 || me.tunel === 1, me.almas.length, Boolean(me.oferta));
       }
     }
+  }
+
+  private efectoDano(): void {
+    const movimientoReducido = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    this.animDano?.cancel();
+    this.animDano = this.capaDano.animate(
+      [{ opacity: movimientoReducido ? 0.35 : 0.8 }, { opacity: 0 }],
+      { duration: movimientoReducido ? 200 : 550, easing: "ease-out" },
+    );
+    if (movimientoReducido) return;
+    this.cameras.main.shake(120, 0.004);
+    this.animDistorsion?.cancel();
+    this.animDistorsion = this.game.canvas.animate(
+      [
+        { transform: "scale(1.006) skewX(0.35deg)" },
+        { transform: "scale(1.003) skewX(-0.2deg)", offset: 0.35 },
+        { transform: "none" },
+      ],
+      { duration: 260, easing: "ease-out" },
+    );
   }
 
   private entradaTactil(me: PlayerS | undefined): void {

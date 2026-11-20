@@ -1,9 +1,10 @@
 import "./ui/estilos.css";
 import { iniciarJuego } from "./game/juego";
 import { intentarReconectar, type SalaJuego } from "./net/conexion";
+import { errorCarga, finalizarCarga, mostrarCarga } from "./ui/carga";
 import { mostrarMenu } from "./ui/menu";
 
-const inicio = performance.now();
+const cargaInicial = mostrarCarga();
 const empezar = (room: SalaJuego) => iniciarJuego(room, (msg) => mostrarMenu(empezar, msg));
 
 async function arrancar(): Promise<void> {
@@ -22,11 +23,13 @@ async function arrancar(): Promise<void> {
 }
 
 void arrancar()
-  .finally(() => {
-    const espera = Math.max(0, 5000 - (performance.now() - inicio));
-    window.setTimeout(() => {
-      const carga = document.getElementById("pantalla-carga");
-      carga?.classList.add("lista");
-      window.setTimeout(() => carga?.remove(), 450);
-    }, espera);
+  .then(async () => {
+    if (document.readyState !== "complete") {
+      await new Promise<void>((resolve) => window.addEventListener("load", () => resolve(), { once: true }));
+    }
+    await finalizarCarga(cargaInicial);
+  })
+  .catch((error: unknown) => {
+    console.error("No se pudo iniciar el juego:", error);
+    errorCarga(cargaInicial, "NO SE PUDO INICIAR EL JUEGO. RECARGA LA PÁGINA.", () => window.location.reload());
   });
