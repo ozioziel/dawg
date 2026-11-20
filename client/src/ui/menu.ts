@@ -99,9 +99,13 @@ export function mostrarMenu(alEmpezar: AlEmpezar, error = ""): void {
   nombre.addEventListener("keydown", (e) => {
     if (e.key === "Enter") (crear.hidden ? unirse : crear).click();
   });
+  const fondo = h("div", { class: "menu-fondo", "aria-hidden": "true" });
+  fondo.style.backgroundImage =
+    "linear-gradient(90deg, rgba(3,6,10,.82) 0%, rgba(3,6,10,.66) 42%, rgba(3,6,10,.91) 100%), linear-gradient(0deg, rgba(3,6,10,.5), rgba(3,6,10,.14)), url(assets/portada_itch.png)";
   const pantalla = h(
       "div",
       { class: "pantalla menu-screen" },
+      fondo,
       h(
         "main",
         { class: "menu-content" },
@@ -120,8 +124,6 @@ export function mostrarMenu(alEmpezar: AlEmpezar, error = ""): void {
         panel,
       ),
     );
-  pantalla.style.backgroundImage =
-    "linear-gradient(90deg, rgba(3,6,10,.82) 0%, rgba(3,6,10,.66) 42%, rgba(3,6,10,.91) 100%), linear-gradient(0deg, rgba(3,6,10,.5), rgba(3,6,10,.14)), url(assets/portada_itch.png)";
   ui().append(pantalla);
 }
 

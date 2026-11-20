@@ -195,6 +195,8 @@ export class Mundo extends Phaser.Scene {
 
     // Controles táctiles (crossplay con móvil)
     this.c.ui.tactil = esTactil();
+    document.body.classList.toggle("modo-tactil", this.c.ui.tactil);
+    this.events.once("shutdown", () => document.body.classList.remove("modo-tactil"));
     if (this.c.ui.tactil) {
       this.tactil = new ControlesTactiles(this.c, {
         ulti: () => this.usarUlti(),
@@ -207,7 +209,7 @@ export class Mundo extends Phaser.Scene {
         },
         mapa: () => (this.c.ui.mapaGrande = !this.c.ui.mapaGrande),
         chat: () => this.c.chat.abrir(),
-        mejora: () => this.room.send("mejora", { i: 0 }),
+        mejora: () => (this.c.ui.mostrarMejoras = !this.c.ui.mostrarMejoras),
       });
       this.events.once("shutdown", () => this.tactil?.destruir());
     }
@@ -339,7 +341,7 @@ export class Mundo extends Phaser.Scene {
       }
       if (this.tactil) {
         const frac = me.enfMax > 0 ? me.enfriamiento / me.enfMax : 0;
-        this.tactil.actualizar(me.forma, frac, me.ulti, me.ultiT > 0 || me.tunel === 1, me.almas.length, Boolean(me.oferta));
+        this.tactil.actualizar(me.forma, frac, me.ulti, me.ultiT > 0 || me.tunel === 1, me.almas.length, Boolean(me.oferta), Boolean(this.c.ui.minijuego) || this.c.chat.abierto);
       }
     }
   }
@@ -369,7 +371,7 @@ export class Mundo extends Phaser.Scene {
     const h = this.c.tactil.habilidad;
     if (h && h !== this.tactilHab) {
       this.tactilHab = h;
-      if (!this.c.ui.minijuego) this.habilidad(h);
+      if (!this.c.ui.minijuego || (h === "up" && this.habDown)) this.habilidad(h);
     }
     if (h === "up") {
       this.c.tactil.habilidad = "";

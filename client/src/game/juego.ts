@@ -31,7 +31,7 @@ export function iniciarJuego(room: SalaJuego, volverAlMenu: (msg?: string) => vo
     carga: mostrarCarga(),
     chat,
     world: new World(mapa as unknown as TiledMap),
-    ui: { mapaGrande: false, minijuego: "", prompt: "", pings: [], tactil: false, codigo: null },
+    ui: { mapaGrande: false, minijuego: "", prompt: "", pings: [], tactil: false, mostrarMejoras: true, codigo: null },
     tactil: { mx: 0, my: 0, aim: null, disparo: false, habilidad: "" },
     salir: (msg?: string) => {
       saliendo = true;

@@ -142,21 +142,21 @@ export class Hud extends Phaser.Scene {
 
   private colocarMinimapa(): void {
     const W = this.scale.width;
-    const max = this.movil ? 170 : 300;
+    const max = this.c.ui.tactil ? 110 : this.movil ? 170 : 300;
     this.mmEscala = Math.min(2, max / this.c.world.w);
-    this.mm.setScale(this.mmEscala).setPosition(W - this.c.world.w * this.mmEscala - 12, 12);
+    this.mm.setScale(this.mmEscala).setPosition(W - this.c.world.w * this.mmEscala - (this.c.ui.tactil ? 8 : 12), this.c.ui.tactil ? 8 : 12);
   }
 
   // ------------------------------------------------------------------ avisos
   private aviso(texto: string, tipo: string): void {
     sfx.aviso(tipo);
     const t = this.add
-      .text(this.scale.width / 2, 0, texto, { ...TEXTO, fontSize: this.movil ? "14px" : "17px", color: COLOR_AVISO[tipo] ?? "#fff", align: "center", wordWrap: { width: Math.min(720, this.scale.width - 60) } })
+      .text(this.scale.width / 2, 0, texto, { ...TEXTO, fontSize: this.c.ui.tactil ? "11px" : this.movil ? "14px" : "17px", color: COLOR_AVISO[tipo] ?? "#fff", align: "center", wordWrap: { width: Math.min(720, this.scale.width - 60) } })
       .setOrigin(0.5, 0)
       .setAlpha(0);
     this.tweens.add({ targets: t, alpha: 1, duration: 200 });
     this.avisos.push({ t, hasta: this.time.now + (tipo === "peligro" || tipo === "alma" || tipo === "rescate" || tipo === "sector" ? 7000 : 5000) });
-    while (this.avisos.length > (this.movil ? 3 : 4)) this.avisos.shift()!.t.destroy();
+    while (this.avisos.length > (this.c.ui.tactil ? 2 : this.movil ? 3 : 4)) this.avisos.shift()!.t.destroy();
   }
 
   // ------------------------------------------------------------------ bucle
@@ -177,7 +177,14 @@ export class Hud extends Phaser.Scene {
     let ax = W / 2;
     // Sin pisar el panel de retos (derecha) ni el propio (izquierda)
     let aw = Math.max(300, Math.min(720, W - 640));
-    if (this.movil) {
+    if (this.c.ui.tactil) {
+      if (W < 500) {
+        ax = (W + 140) / 2;
+        aw = Math.max(100, W - 158);
+      } else {
+        aw = Math.max(120, Math.min(400, W - 300));
+      }
+    } else if (this.movil) {
       const izq = 272;
       const der = W - 200;
       if (der - izq >= 240) {
@@ -200,9 +207,9 @@ export class Hud extends Phaser.Scene {
       y += a.t.height + 4;
     }
     this.prompt
-      .setPosition(W / 2, H - (this.c.ui.tactil ? 170 : 22))
-      .setFontSize(this.movil ? 14 : 18)
-      .setWordWrapWidth(Math.min(760, W - 40))
+      .setPosition(W / 2, H - (this.c.ui.tactil ? H < 520 ? 36 : 190 : 22))
+      .setFontSize(this.c.ui.tactil ? 12 : this.movil ? 14 : 18)
+      .setWordWrapWidth(this.c.ui.tactil ? Math.max(120, W - 160) : Math.min(760, W - 40))
       .setText(this.c.ui.minijuego ? "" : this.c.ui.prompt);
     this.dibujarMapa();
     this.dibujarFlechas(me);
@@ -248,6 +255,7 @@ export class Hud extends Phaser.Scene {
 
   private dibujarEquipo(): number {
     const g = this.gEquipo.clear();
+    if (this.c.ui.tactil) return this.dibujarEquipoTactil(g);
     const compacto = this.movil;
     const ancho = compacto ? 190 : 258;
     const alto = compacto ? 46 : 62;
@@ -299,6 +307,44 @@ export class Hud extends Phaser.Scene {
     return y;
   }
 
+  private dibujarEquipoTactil(g: Phaser.GameObjects.Graphics): number {
+    let y = 64;
+    const vistos = new Set<string>();
+    for (const [id, p] of this.ordenJugadores()) {
+      if (id === this.c.room.sessionId) continue;
+      vistos.add(id);
+      let f = this.filas.get(id);
+      if (!f) {
+        f = {
+          img: this.add.image(0, 0, `retrato_${p.forma}`),
+          nombre: this.add.text(0, 0, "", { ...TEXTO, fontSize: "10px", strokeThickness: 3 }),
+          icono: this.add.image(0, 0, "icono_hielo"),
+        };
+        this.filas.set(id, f);
+      }
+      const color = COLOR_ALIEN[p.forma] ?? 0x7dff6a;
+      g.fillStyle(0x031008, 0.88).fillRoundedRect(8, y, 124, 28, 3).lineStyle(1, color, 0.9).strokeRoundedRect(8, y, 124, 28, 3);
+      if (this.textures.exists(`retrato_${p.forma}`)) f.img.setTexture(`retrato_${p.forma}`);
+      f.img.setDisplaySize(24, 24).setPosition(22, y + 14).setAlpha(p.vivo ? 1 : 0.4);
+      const nombre = p.nombre.length > 10 ? `${p.nombre.slice(0, 9)}…` : p.nombre;
+      f.nombre.setPosition(37, y + 2).setFontSize(10).setText(`${nombre}${p.conectado ? "" : " ⚠"}`).setColor("#" + color.toString(16).padStart(6, "0"));
+      this.barraTerminal(g, 38, y + 19, 83, 4, p.vivo ? p.hp / p.maxHp : 0, p.hp / p.maxHp > 0.35 ? 0x7dff6a : 0xff4a4a, 8);
+      const icon = !p.vivo ? "icono_calavera" : p.estado === "congelado" ? "icono_hielo" : p.estado === "red" ? "icono_red" : p.estado === "agarrado" ? "icono_agarre" : p.almas.length ? "icono_alma" : "";
+      f.icono.setVisible(Boolean(icon)).setScale(0.25).setPosition(120, y + 10);
+      if (icon) f.icono.setTexture(icon).setAlpha(p.estado !== "ok" ? 0.6 + 0.4 * Math.sin(this.time.now / 120) : 1);
+      if (p.ulti >= 1) g.fillStyle(0xffd23e).fillCircle(128, y + 4, 3);
+      y += 32;
+    }
+    for (const [id, f] of this.filas) {
+      if (vistos.has(id)) continue;
+      f.img.destroy();
+      f.nombre.destroy();
+      f.icono.destroy();
+      this.filas.delete(id);
+    }
+    return y;
+  }
+
   /** Barra de enfriamiento que se vacía al usarse y se rellena hasta estar lista (con destello al volver). */
   private barraCd(g: Phaser.GameObjects.Graphics, clave: string, x: number, y: number, w: number, h: number, restante: number, total: number, colListo: number, colCarga: number): void {
     const listo = restante <= 0.001;
@@ -320,6 +366,10 @@ export class Hud extends Phaser.Scene {
     const ocultar = !me;
     for (const t of [this.txtVida, this.txtHab, this.txtBasico, this.txtCdBasico, this.txtCdHab, this.txtRecurso, this.txtUlti, this.txtAyuda, this.retratoPropio]) t.setVisible(!ocultar);
     if (!me) return;
+    if (this.c.ui.tactil) {
+      this.dibujarPropioTactil(g, me);
+      return;
+    }
     const compacto = this.movil;
     const w = compacto ? 278 : 370;
     const h = compacto ? 146 : 184;
@@ -385,6 +435,22 @@ export class Hud extends Phaser.Scene {
     });
   }
 
+  private dibujarPropioTactil(g: Phaser.GameObjects.Graphics, me: PlayerS): void {
+    for (const t of [this.txtHab, this.txtBasico, this.txtCdBasico, this.txtCdHab, this.txtUlti, this.txtAyuda]) t.setVisible(false);
+    const color = COLOR_ALIEN[me.forma] ?? 0x7dff6a;
+    g.fillStyle(0x031008, 0.92).fillRoundedRect(8, 8, 144, 48, 3).lineStyle(2, color, 1).strokeRoundedRect(8, 8, 144, 48, 3);
+    if (this.textures.exists(`retrato_${me.forma}`)) this.retratoPropio.setTexture(`retrato_${me.forma}`);
+    this.retratoPropio.setDisplaySize(38, 38).setPosition(31, 32).setAlpha(me.vivo ? 1 : 0.5);
+    this.txtVida.setPosition(54, 11).setFontSize(11).setText(me.vivo ? `${Math.max(0, Math.round(me.hp))}/${me.maxHp}` : me.fantasma ? "Fantasma" : "Caído");
+    this.barraTerminal(g, 55, 27, 88, 6, me.vivo ? me.hp / me.maxHp : 0, me.hp / me.maxHp > 0.35 ? 0x7dff6a : 0xff4a4a, 8);
+    if (me.escudo > 0) g.fillStyle(0xc08bff, 0.9).fillRect(55, 24, Math.min(88, me.escudo * 2), 2);
+    const recurso = this.recurso(me);
+    const texto = recurso.frac >= 0
+      ? `${recurso.txt.split(" · ")[0].slice(0, 10)} ${Math.round(Phaser.Math.Clamp(recurso.frac, 0, 1) * 100)}%`
+      : recurso.txt.length > 16 ? `${recurso.txt.slice(0, 15)}…` : recurso.txt;
+    this.txtRecurso.setPosition(54, 38).setFontSize(9).setText(texto);
+  }
+
   private recurso(me: PlayerS): { txt: string; frac: number; color: number } {
     switch (me.forma) {
       case "cambiaformas": {
@@ -410,6 +476,24 @@ export class Hud extends Phaser.Scene {
   }
 
   private dibujarObjetivo(W: number): number {
+    if (this.c.ui.tactil) {
+      const vertical = W < 500;
+      const x = vertical ? (W + 140) / 2 : W / 2;
+      const ancho = vertical ? Math.max(100, W - 164) : Math.max(120, Math.min(420, W - 310));
+      const top = vertical ? 108 : 8;
+      const t = this.objetivo.setFontSize(11).setWordWrapWidth(ancho).setText(this.st.objetivo).setPosition(x, top);
+      this.gObjetivo.clear().fillStyle(0x031008, 0.82).fillRoundedRect(x - t.width / 2 - 6, top - 4, t.width + 12, t.height + 8, 3);
+      let y = top + t.height + 8;
+      if (this.st.sector === 3 && this.st.compuerta > 0) {
+        this.barraTerminal(this.gObjetivo, x - ancho / 2, y, ancho, 7, this.st.compuerta, 0xffd23e);
+        y += 14;
+      }
+      if (this.st.eclipse > 0) {
+        this.gObjetivo.fillStyle(0x7a5cff, 0.9).fillRoundedRect(x - 50, y, 100, 12, 3);
+        y += 16;
+      }
+      return y;
+    }
     const lado = this.movil ? 190 : 260;
     const ancho = Math.max(220, Math.min(640, W - 2 * lado - 20));
     const t = this.objetivo.setFontSize(this.movil ? 12 : 15).setWordWrapWidth(ancho).setText(this.st.objetivo).setPosition(W / 2, 14);
@@ -474,27 +558,31 @@ export class Hud extends Phaser.Scene {
       this.jefeTxt.setVisible(false);
       return y;
     }
-    const w = Math.min(520, W - 120);
+    const vertical = this.c.ui.tactil && W < 500;
+    const x = vertical ? (W + 80) / 2 : W / 2;
+    const w = vertical ? Math.max(100, W - 210) : Math.min(520, W - (this.c.ui.tactil ? 300 : 120));
     this.jefeTxt
       .setVisible(true)
       .setText(NOMBRE_JEFE[jefe.t] ?? "JEFE")
-      .setFontSize(this.movil ? 18 : 24)
-      .setPosition(W / 2, y + 26);
+      .setFontSize(this.c.ui.tactil ? 14 : this.movil ? 18 : 24)
+      .setScale(1)
+      .setPosition(x, y + 26);
+    if (this.c.ui.tactil && this.jefeTxt.width > w + 40) this.jefeTxt.setScale((w + 40) / this.jefeTxt.width);
     const colorJefe = jefe.blindado || (jefe.t === "jefe" && jefe.tanques > 0) || (jefe.t === "centinela" && jefe.st !== "enfriado") ? 0x8aa0c0 : 0xff4a4a;
-    g.fillStyle(0x000000, 0.85).fillRoundedRect(W / 2 - w / 2 - 7, y + 23, w + 14, 28, 3);
-    this.barraTerminal(g, W / 2 - w / 2, y + 30, w, 14, jefe.hp / jefe.maxHp, colorJefe, 18);
+    g.fillStyle(0x000000, 0.85).fillRoundedRect(x - w / 2 - 7, y + 23, w + 14, 28, 3);
+    this.barraTerminal(g, x - w / 2, y + 30, w, 14, jefe.hp / jefe.maxHp, colorJefe, 18);
     if (jefe.t === "jefe") {
       const cols = [0x3ec0ff, 0x6be04a, 0xa46bff];
-      for (let i = 0; i < 3; i++) g.fillStyle(i >= jefe.tanques ? 0x333333 : cols[i], 1).fillRoundedRect(W / 2 + w / 2 + 8 + i * 18, y + 26, 14, 22, 4);
+      for (let i = 0; i < 3; i++) g.fillStyle(i >= jefe.tanques ? 0x333333 : cols[i], 1).fillRoundedRect(x + w / 2 + 8 + i * 18, y + 26, 14, 22, 4);
     } else if (jefe.t === "centinela") {
       // Calor: por encima de la marca, las válvulas lo enfrían
-      g.fillStyle(0x000000, 0.8).fillRect(W / 2 - w / 2, y + 48, w, 6).fillStyle(jefe.st === "enfriado" ? 0x3ec0ff : 0xff8a3a).fillRect(W / 2 - w / 2, y + 48, w * Math.min(1, jefe.stT), 6);
-      g.lineStyle(2, 0xffffff).lineBetween(W / 2 - w / 2 + w * 0.7, y + 46, W / 2 - w / 2 + w * 0.7, y + 56);
+      g.fillStyle(0x000000, 0.8).fillRect(x - w / 2, y + 48, w, 6).fillStyle(jefe.st === "enfriado" ? 0x3ec0ff : 0xff8a3a).fillRect(x - w / 2, y + 48, w * Math.min(1, jefe.stT), 6);
+      g.lineStyle(2, 0xffffff).lineBetween(x - w / 2 + w * 0.7, y + 46, x - w / 2 + w * 0.7, y + 56);
       return y + 62;
     } else if (jefe.t === "director") {
       let pilones = 0;
       this.st.unidades.forEach((u) => u.t === "pilon" && pilones++);
-      for (let i = 0; i < pilones; i++) g.fillStyle(0xffd23e).fillRoundedRect(W / 2 + w / 2 + 8 + i * 14, y + 26, 10, 22, 3);
+      for (let i = 0; i < pilones; i++) g.fillStyle(0xffd23e).fillRoundedRect(x + w / 2 + 8 + i * 14, y + 26, 10, 22, 3);
     }
     return y + 54;
   }
@@ -508,13 +596,21 @@ export class Hud extends Phaser.Scene {
       return y;
     }
     const n = c.codigo.length;
-    this.codigoTxt.setText("CÓDIGO DE LA CONSOLA (memorízalo)").setPosition(W / 2, y + 4);
-    g.fillStyle(0x0a1622, 0.9).fillRoundedRect(W / 2 - n * 34 - 10, y, n * 68 + 20, 86, 12);
+    const tactil = this.c.ui.tactil;
+    const x = tactil && W < 500 ? (W + 140) / 2 : W / 2;
+    const ancho = tactil ? Math.min(n * 68 + 20, W < 500 ? W - 158 : W - 300) : n * 68 + 20;
+    const paso = (ancho - 20) / n;
+    const alto = tactil ? 60 : 86;
+    this.codigoTxt.setFontSize(tactil ? 10 : 16).setText(tactil ? "CÓDIGO (memorízalo)" : "CÓDIGO DE LA CONSOLA (memorízalo)").setPosition(x, y + 4);
+    g.fillStyle(0x0a1622, 0.9).fillRoundedRect(x - ancho / 2, y, ancho, alto, 12);
     c.codigo.forEach((k, i) => {
       const col = Phaser.Display.Color.HexStringToColor(CODIGO_COLORES[k].color).color;
-      g.fillStyle(col, 1).fillRoundedRect(W / 2 - n * 34 + i * 68 + 6, y + 30, 56, 46, 8).lineStyle(3, 0x0a0a0c).strokeRoundedRect(W / 2 - n * 34 + i * 68 + 6, y + 30, 56, 46, 8);
+      const bx = x - ancho / 2 + 10 + i * paso + 6;
+      const by = y + (tactil ? 22 : 30);
+      const bh = tactil ? 30 : 46;
+      g.fillStyle(col, 1).fillRoundedRect(bx, by, paso - 12, bh, 8).lineStyle(3, 0x0a0a0c).strokeRoundedRect(bx, by, paso - 12, bh, 8);
     });
-    return y + 92;
+    return y + alto + 6;
   }
 
   // ------------------------------------------------------------------ minimapa dinámico

@@ -47,7 +47,7 @@ Cada jugador elige un alien distinto (de 1 a 5 por partida).
 | Enter | Chat |
 | M / H / N | Mapa grande / ayuda / sonido |
 
-**Móvil (mejor en horizontal):** joystick izquierdo para moverse, joystick derecho para apuntar y atacar, y botones de habilidad, definitiva, E, forma, alma, ping, mapa, chat y mejora.
+**Móvil (mejor en horizontal):** joystick izquierdo para moverse, joystick derecho para apuntar y atacar, y botones de habilidad, definitiva, E, forma, alma, ping, mapa y chat. Cuando hay una mejora disponible, el botón de regalo muestra u oculta las cartas para elegir cualquiera de ellas. Los controles se ocultan mientras está abierto el chat o un minijuego.
 
 Al iniciar la página y al entrar en una partida aparece la pantalla de carga durante al menos cinco segundos y hasta que los recursos estén listos. Al recibir daño, un destello verde y una breve distorsión indican el impacto; la opción de movimiento reducido del dispositivo atenúa el efecto.
 

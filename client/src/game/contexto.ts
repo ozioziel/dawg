@@ -20,6 +20,7 @@ export interface Ctx {
     pings: { de: string; tipo: string; x: number; y: number; hasta: number }[];
     /** Controles táctiles activos. */
     tactil: boolean;
+    mostrarMejoras: boolean;
     /** Código de colores que solo ve este jugador (consola del inspector). */
     codigo: { codigo: number[]; hasta: number } | null;
   };

@@ -16,14 +16,19 @@ export class PanelMejoras {
 
   actualizar(me: PlayerS | undefined): void {
     const oferta = me?.oferta ?? "";
-    if (oferta === this.actual) return;
+    const bloqueado = this.c.ui.tactil && (Boolean(this.c.ui.minijuego) || this.c.chat.abierto);
+    if (oferta === this.actual) {
+      this.el.hidden = !oferta || bloqueado || (this.c.ui.tactil && !this.c.ui.mostrarMejoras);
+      return;
+    }
     this.actual = oferta;
     this.el.replaceChildren();
     if (!oferta || !me) {
       this.el.hidden = true;
       return;
     }
-    this.el.hidden = false;
+    this.c.ui.mostrarMejoras = true;
+    this.el.hidden = bloqueado;
     const titulo = h("div", { class: "mejoras-titulo" }, `🎁 Elige una mejora${me.ofertasPendientes ? ` (+${me.ofertasPendientes} más)` : ""}`);
     this.el.append(titulo);
     oferta.split(",").forEach((s, i) => {
