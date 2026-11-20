@@ -7,6 +7,7 @@ import type { Chat } from "../ui/chat";
 /** Lo que comparten todas las escenas del juego. */
 export interface Ctx {
   room: SalaJuego;
+  carga: number;
   chat: Chat;
   world: World;
   ui: {
@@ -19,6 +20,7 @@ export interface Ctx {
     pings: { de: string; tipo: string; x: number; y: number; hasta: number }[];
     /** Controles táctiles activos. */
     tactil: boolean;
+    mostrarMejoras: boolean;
     /** Código de colores que solo ve este jugador (consola del inspector). */
     codigo: { codigo: number[]; hasta: number } | null;
   };

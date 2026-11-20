@@ -5,6 +5,7 @@ import Phaser from "phaser";
 import { cliente, borrarReconexion, guardarReconexion, type SalaJuego } from "../net/conexion";
 import type { GameStateS } from "../net/tipos";
 import { Chat } from "../ui/chat";
+import { cancelarCarga, mostrarCarga } from "../ui/carga";
 import { h, limpiar, ui } from "../ui/dom";
 import { ocultarFin } from "../ui/fin";
 import type { Ctx } from "./contexto";
@@ -27,9 +28,10 @@ export function iniciarJuego(room: SalaJuego, volverAlMenu: (msg?: string) => vo
   let saliendo = false;
   const c: Ctx = {
     room,
+    carga: mostrarCarga(),
     chat,
     world: new World(mapa as unknown as TiledMap),
-    ui: { mapaGrande: false, minijuego: "", prompt: "", pings: [], tactil: false, codigo: null },
+    ui: { mapaGrande: false, minijuego: "", prompt: "", pings: [], tactil: false, mostrarMejoras: true, codigo: null },
     tactil: { mx: 0, my: 0, aim: null, disparo: false, habilidad: "" },
     salir: (msg?: string) => {
       saliendo = true;
@@ -41,6 +43,7 @@ export function iniciarJuego(room: SalaJuego, volverAlMenu: (msg?: string) => vo
   };
 
   const cerrar = () => {
+    cancelarCarga(c.carga);
     ocultarFin();
     chat.destruir();
     juego?.destroy(true);

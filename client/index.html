@@ -9,8 +9,69 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Chakra+Petch:wght@500;700&display=swap" rel="stylesheet" />
+    <style>
+      #pantalla-carga {
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        background: #020503;
+        color: #baffaa;
+        font-family: "Courier New", monospace;
+      }
+      #pantalla-carga.oculta { display: none; }
+      #pantalla-carga::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: repeating-linear-gradient(0deg, rgba(141,255,114,.045) 0 1px, transparent 1px 4px),
+          radial-gradient(circle at center, transparent 42%, rgba(0,0,0,.72) 100%);
+      }
+      #pantalla-carga img {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .carga-terminal {
+        position: absolute;
+        left: max(24px, env(safe-area-inset-left, 0px));
+        right: max(24px, env(safe-area-inset-right, 0px));
+        bottom: max(24px, env(safe-area-inset-bottom, 0px));
+        z-index: 1;
+        display: grid;
+        gap: 7px;
+        padding: 14px 18px;
+        border: 2px solid #7dff6a;
+        background: rgba(1,8,3,.88);
+        font: 700 12px "Courier New", monospace;
+        letter-spacing: .12em;
+        box-shadow: 6px 6px 0 #000, 0 0 22px rgba(125,255,106,.22);
+      }
+      .carga-terminal strong { font-size: clamp(13px, 2.4vw, 20px); }
+      .carga-terminal button {
+        justify-self: start;
+        padding: 8px 12px;
+        border: 1px solid #7dff6a;
+        background: #07180b;
+        color: #baffaa;
+        font: inherit;
+        cursor: pointer;
+      }
+    </style>
   </head>
   <body>
+    <div id="pantalla-carga" aria-live="polite" aria-label="Cargando DAWG">
+      <img src="assets/pantalla_cargando.gif" alt="" />
+      <div class="carga-terminal">
+        <strong>DAWG // SISTEMA DE EVASIÓN</strong>
+        <span id="carga-mensaje">CARGANDO ARCHIVOS DEL ÁREA 51...</span>
+        <button id="carga-volver" type="button" hidden>VOLVER</button>
+      </div>
+    </div>
     <div id="juego"></div>
     <div id="ui"></div>
     <script type="module" src="/src/main.ts"></script>

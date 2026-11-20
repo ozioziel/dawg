@@ -107,6 +107,9 @@ export class Mundo extends Phaser.Scene {
   private siguiendo = "";
   private tactil?: ControlesTactiles;
   private chorroT = 0;
+  private capaDano!: HTMLDivElement;
+  private animDano?: Animation;
+  private animDistorsion?: Animation;
 
   constructor() {
     super("Mundo");
@@ -122,6 +125,14 @@ export class Mundo extends Phaser.Scene {
 
   create(): void {
     this.c = ctx(this);
+    this.capaDano = document.createElement("div");
+    this.capaDano.className = "dano-pantalla";
+    document.getElementById("juego")!.append(this.capaDano);
+    this.events.once("shutdown", () => {
+      this.animDano?.cancel();
+      this.animDistorsion?.cancel();
+      this.capaDano.remove();
+    });
     const map = this.make.tilemap({ key: "area51" });
     const ts = map.addTilesetImage("laboratorio", "tiles")!;
     map.createLayer("suelo", ts, 0, 0)!.setDepth(0);
@@ -184,6 +195,8 @@ export class Mundo extends Phaser.Scene {
 
     // Controles táctiles (crossplay con móvil)
     this.c.ui.tactil = esTactil();
+    document.body.classList.toggle("modo-tactil", this.c.ui.tactil);
+    this.events.once("shutdown", () => document.body.classList.remove("modo-tactil"));
     if (this.c.ui.tactil) {
       this.tactil = new ControlesTactiles(this.c, {
         ulti: () => this.usarUlti(),
@@ -196,7 +209,7 @@ export class Mundo extends Phaser.Scene {
         },
         mapa: () => (this.c.ui.mapaGrande = !this.c.ui.mapaGrande),
         chat: () => this.c.chat.abrir(),
-        mejora: () => this.room.send("mejora", { i: 0 }),
+        mejora: () => (this.c.ui.mostrarMejoras = !this.c.ui.mostrarMejoras),
       });
       this.events.once("shutdown", () => this.tactil?.destruir());
     }
@@ -319,7 +332,7 @@ export class Mundo extends Phaser.Scene {
     this.seguirCamara(me);
     this.c.ui.prompt = this.calcularPrompt(me);
     if (me) {
-      if (this.vidaPrev >= 0 && me.hp < this.vidaPrev) this.cameras.main.shake(120, 0.004);
+      if (this.vidaPrev >= 0 && me.hp < this.vidaPrev) this.efectoDano();
       this.vidaPrev = me.hp;
       if (this.habDown && performance.now() - this.habEnvio > 100) {
         this.habEnvio = performance.now();
@@ -328,9 +341,29 @@ export class Mundo extends Phaser.Scene {
       }
       if (this.tactil) {
         const frac = me.enfMax > 0 ? me.enfriamiento / me.enfMax : 0;
-        this.tactil.actualizar(me.forma, frac, me.ulti, me.ultiT > 0 || me.tunel === 1, me.almas.length, Boolean(me.oferta));
+        this.tactil.actualizar(me.forma, frac, me.ulti, me.ultiT > 0 || me.tunel === 1, me.almas.length, Boolean(me.oferta), Boolean(this.c.ui.minijuego) || this.c.chat.abierto);
       }
     }
+  }
+
+  private efectoDano(): void {
+    const movimientoReducido = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    this.animDano?.cancel();
+    this.animDano = this.capaDano.animate(
+      [{ opacity: movimientoReducido ? 0.35 : 0.8 }, { opacity: 0 }],
+      { duration: movimientoReducido ? 200 : 550, easing: "ease-out" },
+    );
+    if (movimientoReducido) return;
+    this.cameras.main.shake(120, 0.004);
+    this.animDistorsion?.cancel();
+    this.animDistorsion = this.game.canvas.animate(
+      [
+        { transform: "scale(1.006) skewX(0.35deg)" },
+        { transform: "scale(1.003) skewX(-0.2deg)", offset: 0.35 },
+        { transform: "none" },
+      ],
+      { duration: 260, easing: "ease-out" },
+    );
   }
 
   private entradaTactil(me: PlayerS | undefined): void {
@@ -338,7 +371,7 @@ export class Mundo extends Phaser.Scene {
     const h = this.c.tactil.habilidad;
     if (h && h !== this.tactilHab) {
       this.tactilHab = h;
-      if (!this.c.ui.minijuego) this.habilidad(h);
+      if (!this.c.ui.minijuego || (h === "up" && this.habDown)) this.habilidad(h);
     }
     if (h === "up") {
       this.c.tactil.habilidad = "";

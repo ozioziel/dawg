@@ -35,6 +35,7 @@ export class ControlesTactiles {
   private etiquetaUlti: HTMLElement;
   private cargaUlti: HTMLElement;
   private cdHab: HTMLElement;
+  private bloqueado = false;
 
   constructor(
     private c: Ctx,
@@ -59,12 +60,14 @@ export class ControlesTactiles {
         down();
       });
       const fin = (e: PointerEvent) => {
+        if (!b.classList.contains("pulsado")) return;
         e.preventDefault();
         b.classList.remove("pulsado");
         up?.();
       };
       b.addEventListener("pointerup", fin);
       b.addEventListener("pointercancel", fin);
+      b.addEventListener("lostpointercapture", fin);
       this.botones.set(clave, b);
       this.el.append(b);
       return b;
@@ -80,10 +83,10 @@ export class ControlesTactiles {
     boton("e", "E", "e", () => this.acc.interactuar(true), () => this.acc.interactuar(false));
     boton("q", "Q · forma", "q", () => this.acc.forma());
     boton("g", "G · alma", "g", () => this.acc.dar());
-    boton("ping", "📍", "ping", () => this.acc.ping());
-    boton("mapa", "🗺", "mapa", () => this.acc.mapa());
-    boton("chat", "💬", "chat", () => this.acc.chat());
-    boton("mejora", "🎁", "mejora", () => this.acc.mejora());
+    boton("ping", "📍", "ping", () => this.acc.ping()).setAttribute("aria-label", "Enviar señal");
+    boton("mapa", "🗺", "mapa", () => this.acc.mapa()).setAttribute("aria-label", "Abrir o cerrar mapa");
+    boton("chat", "💬", "chat", () => this.acc.chat()).setAttribute("aria-label", "Abrir chat");
+    boton("mejora", "🎁", "mejora", () => this.acc.mejora()).setAttribute("aria-label", "Mostrar u ocultar mejoras");
     ui().append(this.el);
   }
 
@@ -140,7 +143,21 @@ export class ControlesTactiles {
   }
 
   /** Actualiza nombres, enfriamientos y visibilidad según la forma actual. */
-  actualizar(forma: string, enfFrac: number, ulti: number, ultiActiva: boolean, almas: number, oferta: boolean): void {
+  actualizar(forma: string, enfFrac: number, ulti: number, ultiActiva: boolean, almas: number, oferta: boolean, bloqueado: boolean): void {
+    if (bloqueado !== this.bloqueado) {
+      this.bloqueado = bloqueado;
+      this.el.classList.toggle("oculto", bloqueado);
+      if (bloqueado) {
+        this.izq?.base.remove();
+        this.der?.base.remove();
+        this.izq = this.der = null;
+        this.c.tactil.mx = this.c.tactil.my = 0;
+        this.c.tactil.disparo = false;
+        if (this.botones.get("hab")?.classList.contains("pulsado")) this.c.tactil.habilidad = "up";
+        if (this.botones.get("e")?.classList.contains("pulsado")) this.acc.interactuar(false);
+        this.botones.forEach((b) => b.classList.remove("pulsado"));
+      }
+    }
     const def = isAlienKind(forma) ? ALIENS[forma] : undefined;
     this.etiqueta(this.etiquetaHab, def?.habilidad.nombre ?? "Habilidad");
     this.etiqueta(this.etiquetaUlti, def?.ulti.nombre ?? "Definitiva");

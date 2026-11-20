@@ -33,70 +33,6 @@ body {
   overscroll-behavior: none;
 }
 
-#pantalla-carga {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  background: #020503;
-  transition: opacity 0.4s ease, visibility 0.4s;
-}
-
-#pantalla-carga::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    repeating-linear-gradient(0deg, rgba(141, 255, 114, 0.045) 0 1px, transparent 1px 4px),
-    radial-gradient(circle at center, transparent 42%, rgba(0, 0, 0, 0.72) 100%);
-}
-
-#pantalla-carga.lista {
-  opacity: 0;
-  visibility: hidden;
-}
-
-#pantalla-carga img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  image-rendering: auto;
-  filter: saturate(0.82) contrast(1.08) brightness(0.72);
-}
-
-.carga-terminal {
-  position: absolute;
-  left: max(24px, env(safe-area-inset-left, 0px));
-  right: max(24px, env(safe-area-inset-right, 0px));
-  bottom: max(24px, env(safe-area-inset-bottom, 0px));
-  z-index: 1;
-  display: grid;
-  gap: 7px;
-  padding: 14px 18px;
-  border: 2px solid #7dff6a;
-  background: rgba(1, 8, 3, 0.88);
-  color: #baffaa;
-  font: 700 12px "Courier New", monospace;
-  letter-spacing: 0.12em;
-  box-shadow: 6px 6px 0 #000, 0 0 22px rgba(125, 255, 106, 0.22);
-  text-shadow: 0 0 7px rgba(125, 255, 106, 0.5);
-}
-
-.carga-terminal strong {
-  font-size: clamp(13px, 2.4vw, 20px);
-}
-
-.cursor-terminal {
-  animation: cursor-terminal 0.65s steps(1, end) infinite;
-}
-
-@keyframes cursor-terminal {
-  50% { opacity: 0; }
-}
-
 #juego {
   position: fixed;
   inset: 0;
@@ -106,6 +42,15 @@ body {
   display: block;
   image-rendering: auto;
   filter: contrast(1.045) saturate(1.1) brightness(1.025);
+}
+
+.dano-pantalla {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(ellipse at center, rgba(85, 255, 106, 0.03) 20%, rgba(34, 128, 28, 0.45) 72%, rgba(8, 45, 10, 0.8) 100%);
 }
 
 #ui {
@@ -166,6 +111,26 @@ body {
   isolation: isolate;
 }
 
+.pantalla > .menu-fondo {
+  position: fixed;
+  inset: -2%;
+  z-index: -1;
+  pointer-events: none;
+  background-position: center, center, right center;
+  background-size: cover, cover, contain;
+  background-repeat: no-repeat;
+  animation: crt-fondo 12s linear infinite;
+}
+
+.menu-fondo::after {
+  content: "";
+  position: absolute;
+  inset: -15% 0 auto;
+  height: 12%;
+  background: linear-gradient(transparent, rgba(160, 255, 164, 0.045), transparent);
+  animation: crt-barrido 9s linear infinite;
+}
+
 .menu-screen::before {
   z-index: -1;
   background: repeating-linear-gradient(0deg, rgba(210, 208, 199, 0.035) 0 1px, transparent 1px 3px);
@@ -179,9 +144,20 @@ body {
   z-index: 2;
   pointer-events: none;
   opacity: 0.12;
-  background-image: radial-gradient(rgba(230, 230, 220, 0.38) 0.45px, transparent 0.7px);
-  background-size: 4px 4px;
+  background-image: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.35) 0 1px, transparent 1px 3px), radial-gradient(rgba(230, 230, 220, 0.38) 0.45px, transparent 0.7px);
+  background-size: auto, 4px 4px;
   animation: vhs-flicker 7s steps(2, end) infinite;
+}
+
+@keyframes crt-fondo {
+  0%, 93%, 96%, 100% { transform: scale(1.015) translateX(0); filter: contrast(1.04); }
+  94% { transform: scale(1.015) translateX(2px) skewX(0.12deg); filter: contrast(1.08); }
+  95% { transform: scale(1.015) translateX(-1px); }
+}
+
+@keyframes crt-barrido {
+  from { transform: translateY(0); }
+  to { transform: translateY(130vh); }
 }
 
 @keyframes vhs-flicker {
@@ -203,6 +179,7 @@ body {
   max-height: 235px;
   object-fit: contain;
   object-position: left center;
+  animation: crt-logo 5s ease-in-out infinite;
 }
 
 .menu-tagline {
@@ -231,6 +208,24 @@ body {
   font: 700 14px/1.2 "Courier New", monospace;
   letter-spacing: 0.12em;
   transition: background-color 0.16s, border-color 0.16s, color 0.16s;
+}
+
+.menu-options .menu-action {
+  animation: menu-entrada 0.45s ease-out both;
+}
+.menu-options .menu-action:nth-child(2) { animation-delay: 0.07s; }
+.menu-options .menu-action:nth-child(3) { animation-delay: 0.14s; }
+.menu-options .menu-action:nth-child(4) { animation-delay: 0.21s; }
+.menu-options .menu-action:nth-child(5) { animation-delay: 0.28s; }
+
+@keyframes menu-entrada {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes crt-logo {
+  0%, 88%, 100% { filter: brightness(1); }
+  90% { filter: brightness(1.12); }
+  92% { filter: brightness(0.94); }
 }
 
 .menu-screen .menu-action:hover {
@@ -1227,6 +1222,9 @@ kbd {
   width: min(300px, 46vw);
   z-index: 6;
 }
+.mejoras[hidden] {
+  display: none;
+}
 .mejoras-titulo {
   font: 700 15px "Chakra Petch", system-ui, sans-serif;
   color: #ffd23e;
@@ -1324,64 +1322,97 @@ kbd {
   }
 }
 
-/* Móvil en horizontal (pantallas bajas): botones más compactos y sin solaparse */
-@media (max-height: 520px) {
+  /* La capa táctil deja libre el centro y mantiene los botones fuera de la zona de apuntado. */
+  .tactil.oculto {
+    display: none;
+  }
+  .tactil-zona {
+    height: min(44%, 230px);
+  }
+  .tactil-zona.izq {
+    width: 36%;
+  }
+  .tactil-zona.der {
+    right: calc(140px + env(safe-area-inset-right, 0px));
+    width: min(26vw, calc(64% - 140px - env(safe-area-inset-right, 0px)));
+  }
+  .tactil-guia {
+    font-size: 9px;
+    opacity: 0.7;
+  }
+  .tactil-btn {
+    border-width: 2px;
+    background: rgba(3, 17, 10, 0.65);
+  }
   .tactil-btn.t-hab {
-    right: 16px;
-    bottom: 14px;
-    width: 84px;
-    height: 84px;
+    right: calc(10px + env(safe-area-inset-right, 0px));
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    width: 64px;
+    height: 64px;
   }
   .tactil-btn.t-ulti {
-    right: 110px;
-    bottom: 10px;
-    width: 62px;
-    height: 62px;
+    right: calc(82px + env(safe-area-inset-right, 0px));
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    width: 52px;
+    height: 52px;
   }
   .tactil-btn.t-e {
-    right: 26px;
-    bottom: 108px;
-    width: 56px;
-    height: 56px;
+    right: calc(12px + env(safe-area-inset-right, 0px));
+    bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+    width: 52px;
+    height: 52px;
+    font-size: 19px;
+  }
+  .tactil-btn.t-q,
+  .tactil-btn.t-g {
+    right: calc(75px + env(safe-area-inset-right, 0px));
+    width: 48px;
+    height: 48px;
+    font-size: 9px;
   }
   .tactil-btn.t-q {
-    right: 100px;
-    bottom: 84px;
-    width: 50px;
-    height: 50px;
+    bottom: calc(75px + env(safe-area-inset-bottom, 0px));
   }
   .tactil-btn.t-g {
-    right: 96px;
-    bottom: 142px;
-    width: 46px;
-    height: 46px;
+    bottom: calc(131px + env(safe-area-inset-bottom, 0px));
   }
   .tactil-btn.t-ping,
   .tactil-btn.t-mapa,
   .tactil-btn.t-chat,
   .tactil-btn.t-mejora {
-    top: calc(env(safe-area-inset-top, 0px) + 92px);
-    width: 40px;
-    height: 40px;
+    top: calc(55px + env(safe-area-inset-top, 0px));
+    width: 44px;
+    height: 44px;
     font-size: 17px;
   }
-  .tactil-btn.t-ping {
-    right: 12px;
+  .tactil-btn.t-ping { right: calc(4px + env(safe-area-inset-right, 0px)); }
+  .tactil-btn.t-mapa { right: calc(50px + env(safe-area-inset-right, 0px)); }
+  .tactil-btn.t-chat { right: calc(96px + env(safe-area-inset-right, 0px)); }
+  .tactil-btn.t-mejora { right: calc(142px + env(safe-area-inset-right, 0px)); }
+  .modo-tactil .chat {
+    left: 8px;
+    bottom: min(50%, 190px);
+    width: min(240px, 60vw);
+    font-size: 12px;
   }
-  .tactil-btn.t-mapa {
-    right: 58px;
+  .modo-tactil .mejoras {
+    top: 104px;
+    right: max(8px, env(safe-area-inset-right, 0px));
+    bottom: auto;
+    width: min(260px, 54vw);
+    max-height: min(50vh, 300px);
+    overflow-y: auto;
   }
-  .tactil-btn.t-chat {
-    right: 104px;
-  }
-  .tactil-btn.t-mejora {
-    right: 150px;
-  }
-  .tactil-zona.der {
-    right: 180px;
-  }
-}
 
+  @media (prefers-reduced-motion: reduce) {
+    .pantalla > .menu-fondo,
+    .menu-fondo::after,
+    .menu-screen::after,
+    .menu-logo,
+    .menu-options .menu-action {
+      animation: none;
+    }
+  }
 /* Menú en móvil horizontal: logo más pequeño para que se vean los botones sin desplazar */
 @media (max-height: 520px) {
   .menu-screen {
